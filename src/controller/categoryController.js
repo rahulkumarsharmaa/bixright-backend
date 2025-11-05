@@ -10,7 +10,7 @@ const getCategoryData = async (req, res) => {
 
     return res
       .status(200)
-      .json({ success: true, message: "category Fetched", category });
+      .json({ success: true, message: "Category Fetched", category });
   } catch (error) {
     console.log(error);
     return res.status(500).json(error.message);
@@ -40,55 +40,71 @@ const getcategoryById = async (req, res) => {
 
 const addCategory = async (req, res) => {
   try {
-    console.log(req.body);
     const { title, description, parentCategory, status } = req.body;
 
+    // 🟡 Validate input
     if (!title) {
       return res.status(400).json({
         success: false,
-        message: "Details Missing !",
+        message: "Title is required!",
       });
     }
 
-    const lowerTitle = title.toLowerCase();
-    const existing = await Category.findOne({ title: lowerTitle });
+    // 🟢 Normalize title for duplicate check
+    const normalizedTitle = title.trim().toLowerCase();
+
+    const existing = await Category.findOne({
+      title: { $regex: new RegExp(`^${normalizedTitle}$`, "i") },
+    });
 
     if (existing) {
       return res.status(400).json({
         success: false,
-        message: "Category Already Exist !",
+        message: "Category already exists!",
       });
     }
 
-    const categoryData = await Category.findById(parentCategory);
-
-    if (!categoryData) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Category not found" });
+    // 🟣 Check parent category (if provided)
+    let parentCatData = null;
+    if (parentCategory) {
+      parentCatData = await Category.findById(parentCategory);
+      if (!parentCatData) {
+        return res.status(400).json({
+          success: false,
+          message: "Parent category not found!",
+        });
+      }
     }
 
+    // 🔵 Create category (slug auto-generated in model)
     const category = new Category({
       title,
       description,
-      parentCategory : {
-        id : categoryData._id,
-        name : categoryData.title
-      },
+      parentCategory: parentCatData
+        ? {
+            id: parentCatData._id || null ,
+            name: parentCatData.title || null,
+          }
+        : {},
       status,
     });
 
     await category.save();
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: "Category Created Successfully !",
+      message: "Category created successfully!",
+      data: category,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Error adding category:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
+
 
 const updateCategory = async (req, res) => {
   try {

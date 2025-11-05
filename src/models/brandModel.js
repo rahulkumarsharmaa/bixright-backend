@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const slugify = require('slugify')
 
 const brandSchema = new mongoose.Schema(
   {
@@ -6,6 +7,13 @@ const brandSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      trim: true,
+    },
+    slug: {
+      type: String,
+      lowercase: true,
+      unique: true,
+      required: true,
     },
     status: {
       type: String,
@@ -15,6 +23,16 @@ const brandSchema = new mongoose.Schema(
   },
   { timestamps: true, versionKey: false }
 );
+
+brandSchema.pre("validate", function (next) {
+  if (this.title && (!this.slug || this.isModified("title"))) {
+    this.slug = slugify(this.title, {
+      lower: true,
+      strict: true, // remove special chars
+    });
+  }
+  next();
+});
 
 const Brand = mongoose.model("Brand", brandSchema);
 
