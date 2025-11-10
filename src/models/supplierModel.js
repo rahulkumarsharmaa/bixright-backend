@@ -70,6 +70,6 @@ const supplierSchema = new mongoose.Schema(
   { timestamps: true, versionKey: false }
 );
 
-const Supplier = mongoose.model("Supplier", supplierSchema);
+const Supplier = mongoose.models.Supplier || mongoose.model('Supplier', supplierSchema);
 
 module.exports = Supplier;

@@ -18,6 +18,9 @@ const stockRouter = require('./src/routes/stockRoute')
 const tagRouter = require('./src/routes/tagRoute')
 const purchaseRouter = require('./src/routes/purchaseRoute')
 const supplierRouter = require('./src/routes/supplierRouter')
+const orderRouter = require('./src/routes/orderRoute')
+const customerRouter = require('./src/routes/customerRoute')
+const refundRouter = require('./src/routes/refundRoute')
 
 const app = express()
 dbConnection()
@@ -39,7 +42,12 @@ app.use('/api/admin/stock', stockRouter)
 app.use('/api/admin/tag', tagRouter )
 
 app.use('/api/admin/purchase', purchaseRouter )
+app.use('/api/admin/order', orderRouter )
+
 app.use('/api/admin/supplier', supplierRouter )
+app.use('/api/admin/customer', customerRouter )
+
+app.use('/api/admin/refund', refundRouter )
 
 app.use('/api/admin/support', supportTicketRouter)
 app.use('/api/admin/kyc', kycRouter)

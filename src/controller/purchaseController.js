@@ -1,10 +1,11 @@
 const Brand = require("../models/brandModel");
 const Product = require("../models/productModel");
 const Purchase = require("../models/purchasemodel");
+const Supplier = require("../models/suppliermodel");
 
 const getPurchaseData = async (req, res) => {
   try {
-    const purchase = await Purchase.find();
+    const purchase = await Purchase.find().populate('product', 'imageUrl title').populate('supplier', 'company firstName lastName');
     if (!purchase) {
       return res
         .status(404)
@@ -64,6 +65,8 @@ const addPurchase = async (req, res) => {
       remark,
     } = req.body;
 
+    console.log(req.body)
+
     if (!product || !purchaseDate || !price || !quantity ) {
       return res.status(400).json({
         success: false,
@@ -80,7 +83,7 @@ const addPurchase = async (req, res) => {
       });
     }
 
-    const supplierExist = await Product.findById(supplier);
+    const supplierExist = await Supplier.findById(supplier);
 
     if (!supplierExist) {
       return res.status(400).json({

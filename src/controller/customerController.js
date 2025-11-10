@@ -1,75 +1,75 @@
-const Supplier = require("../models/suppliermodel");
 
-const getSupplierData = async (req, res) => {
+const Customer = require("../models/customerModel");
+
+const getCustomerData = async (req, res) => {
   try {
-    const supplier = await Supplier.find();
-    if (!supplier) {
+    const customer = await Customer.find();
+    if (!customer) {
       return res
         .status(404)
-        .json({ success: false, message: "No Supplier Yet" });
+        .json({ success: false, message: "No Customer Yet" });
     }
 
     return res
       .status(200)
-      .json({ success: true, message: "Supplier Fetched", supplier });
+      .json({ success: true, message: "Customer Fetched", customer });
   } catch (error) {
     console.log(error);
     return res.status(500).json(error.message);
   }
 };
 
-const getSupplierById = async (req, res) => {
+const getCustomerById = async (req, res) => {
   const id = req.params;
   console.log(id);
 
   if (!id) {
     return res
       .status(404)
-      .json({ success: false, message: "No supplierId provided" });
+      .json({ success: false, message: "No customerId provided" });
   }
 
   try {
-    const supplier = await Supplier.findById(id);
-    if (!supplier) {
+    const customer = await Customer.findById(id);
+    if (!customer) {
       return res
         .status(404)
-        .json({ success: false, message: "No supplier Found" });
+        .json({ success: false, message: "No customer Found" });
     }
 
     return res
       .status(200)
-      .json({ success: true, message: "supplier Fetched", supplier });
+      .json({ success: true, message: "customer Fetched", customer });
   } catch (error) {
     console.log(error);
     return res.status(500).json(error.message);
   }
 };
 
-const addSupplier = async (req, res) => {
+const addCustomer = async (req, res) => {
   try {
     const {
-      company,
       firstName,
       lastName,
+      dob,
+      gender,
       phone,
       alternatePhone,
       email,
       address,
-      gstNumber,
-      panNumber,
       bankDetails,
       status,
       remark,
     } = req.body;
 
-    if (!firstName || !phone || !email ) {
+    if (!firstName || !dob || !phone || !email  ) {
       return res.status(400).json({
         success: false,
         message: "Details Missing !",
       });
     }
 
-    const emailExist = await Supplier.findOne({ email });
+    const emailExist = await Customer.findOne({ email });
 
     if (emailExist) {
       return res.status(400).json({
@@ -78,7 +78,7 @@ const addSupplier = async (req, res) => {
       });
     }
 
-    const phoneExist = await Supplier.findOne({ phone });
+    const phoneExist = await Customer.findOne({ phone });
 
     if (phoneExist) {
       return res.status(400).json({
@@ -87,26 +87,25 @@ const addSupplier = async (req, res) => {
       });
     }
 
-    const supplier = new Supplier({
-      company,
+    const customer = new Customer({
       firstName,
       lastName,
+      dob,
+      gender,
       phone,
       alternatePhone,
       email,
       address,
-      gstNumber,
-      panNumber,
       bankDetails,
       status,
       remark,
     });
 
-    await supplier.save();
+    await customer.save();
 
     return res.status(200).json({
       success: true,
-      message: "Supplier Created Successfully !",
+      message: "Customer Created Successfully !",
     });
   } catch (error) {
     console.error(error);
@@ -114,32 +113,32 @@ const addSupplier = async (req, res) => {
   }
 };
 
-const updateSupplier = async (req, res) => {
+const updateCustomer = async (req, res) => {
   try {
-    const supplierId = req.params.id;
+    const customerId = req.params.id;
     const data = req.body;
     console.log(data);
 
-    if (!supplierId) {
+    if (!customerId) {
       return res
         .status(400)
-        .json({ success: false, message: "supplierId Missing" });
+        .json({ success: false, message: "customerId Missing" });
     }
 
-    const supplier = await Supplier.findByIdAndUpdate(supplierId, data, {
+    const customer = await Customer.findByIdAndUpdate(customerId, data, {
       new: true,
     });
 
-    if (!supplier) {
+    if (!customer) {
       return res
         .status(404)
-        .json({ success: false, message: "Supplier not found" });
+        .json({ success: false, message: "Customer not found" });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Supplier Updated Successfully",
-      supplier,
+      message: "Customer Updated Successfully",
+      customer,
     });
   } catch (error) {
     console.log(error);
@@ -147,26 +146,26 @@ const updateSupplier = async (req, res) => {
   }
 };
 
-const deleteSupplier = async (req, res) => {
+const deleteCustomer = async (req, res) => {
   try {
-    const supplierId = req.params.id;
+    const customerId = req.params.id;
 
-    if (!supplierId) {
+    if (!customerId) {
       return res
         .status(400)
-        .json({ success: false, message: "supplierId Missing" });
+        .json({ success: false, message: "customerId Missing" });
     }
 
-    const check = await Supplier.findByIdAndDelete(supplierId);
+    const check = await Customer.findByIdAndDelete(customerId);
     if (!check) {
       return res
         .status(404)
-        .json({ success: false, message: "Supplier Id Not Found" });
+        .json({ success: false, message: "Customer Id Not Found" });
     }
 
     return res
       .status(200)
-      .json({ success: true, message: "Supplier Deleted Successfully !" });
+      .json({ success: true, message: "Customer Deleted Successfully !" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ success: false, message: error.message });
@@ -179,14 +178,14 @@ const bulkDelete = async (req, res) => {
     if (!ids || !ids.length) {
       return res
         .status(400)
-        .json({ success: false, message: "supplierIds Missing" });
+        .json({ success: false, message: "customerIds Missing" });
     }
 
-    const result = await Supplier.deleteMany({ _id: { $in: ids } });
+    const result = await Customer.deleteMany({ _id: { $in: ids } });
 
     return res.status(200).json({
       success: true,
-      message: `${ids.length} Supplier Deleted Successfully !`,
+      message: `${ids.length} Customer Deleted Successfully !`,
     });
   } catch (error) {
     console.log(error);
@@ -195,10 +194,10 @@ const bulkDelete = async (req, res) => {
 };
 
 module.exports = {
-  getSupplierData,
-  getSupplierById,
-  addSupplier,
-  updateSupplier,
-  deleteSupplier,
+  getCustomerData,
+  getCustomerById,
+  addCustomer,
+  updateCustomer,
+  deleteCustomer,
   bulkDelete,
 };
