@@ -65,28 +65,28 @@ const addCategory = async (req, res) => {
     }
 
     // 🟣 Check parent category (if provided)
-    let parentCatData = null;
-    if (parentCategory) {
-      parentCatData = await Category.findById(parentCategory);
-      if (!parentCatData) {
-        return res.status(400).json({
-          success: false,
-          message: "Parent category not found!",
-        });
-      }
-    }
+    // let parentCatData = null;
+    // if (parentCategory) {
+    //   parentCatData = await Category.findById(parentCategory);
+    //   if (!parentCatData) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: "Parent category not found!",
+    //     });
+    //   }
+    // }
 
     // 🔵 Create category (slug auto-generated in model)
     const category = new Category({
       title,
       description,
-      parentCategory: parentCatData
-        ? {
-            id: parentCatData._id || null ,
-            name: parentCatData.title || null,
-          }
-        : {},
       status,
+      // parentCategory: parentCatData
+      //   ? {
+      //       id: parentCatData._id || null ,
+      //       name: parentCatData.title || null,
+      //     }
+      //   : {},
     });
 
     await category.save();
@@ -104,7 +104,6 @@ const addCategory = async (req, res) => {
     });
   }
 };
-
 
 const updateCategory = async (req, res) => {
   try {

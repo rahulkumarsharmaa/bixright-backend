@@ -21,6 +21,8 @@ const supplierRouter = require('./src/routes/supplierRouter')
 const orderRouter = require('./src/routes/orderRoute')
 const customerRouter = require('./src/routes/customerRoute')
 const refundRouter = require('./src/routes/refundRoute')
+const  dashboardRouter = require('./src/routes/dashboardRoute')
+const subcategoryRouter = require('./src/routes/subCategoryRoute')
 
 const app = express()
 dbConnection()
@@ -31,10 +33,14 @@ app.use(express.urlencoded({extended : true}))
 app.use('/api/admin', adminRouter)
 app.use('/api/admin', userRouter)
 
+app.use('/api/admin/dashboard', dashboardRouter)
+
 app.use('/api/admin/product', productRouter)
+
 app.use('/api/admin/attribute', attributeRouter)
 app.use('/api/admin/unit', unitRouter)
 app.use('/api/admin/category', categoryRouter)
+app.use('/api/admin/subcategory', subcategoryRouter)
 app.use('/api/admin/size', sizeRouter)
 app.use('/api/admin/color', colorRouter)
 app.use('/api/admin/brand', brandRouter)

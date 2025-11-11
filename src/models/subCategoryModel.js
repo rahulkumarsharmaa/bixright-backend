@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
 
-const categorySchema = new mongoose.Schema(
+const subCategorySchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -12,10 +12,10 @@ const categorySchema = new mongoose.Schema(
     description: {
       type: String,
     },
-    // parentCategory: {
-    //   id: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
-    //   name: { type: String, default: null },
-    // },
+    parentCategory: {
+      id: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+      name: { type: String, default: null },
+    },
     slug: {
       type: String,
       lowercase: true,
@@ -31,7 +31,7 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true, versionKey: false }
 );
 
-categorySchema.pre("validate", function (next) {
+subCategorySchema.pre("validate", function (next) {
   if (this.title && (!this.slug || this.isModified("title"))) {
     this.slug = slugify(this.title, {
       lower: true,
@@ -41,6 +41,6 @@ categorySchema.pre("validate", function (next) {
   next();
 });
 
-const Category = mongoose.model("Category", categorySchema);
+const SubCategory = mongoose.model("SubCategory", subCategorySchema);
 
-module.exports = Category;
+module.exports = SubCategory;

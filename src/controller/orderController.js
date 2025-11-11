@@ -7,7 +7,7 @@ const Customer = require("../models/customerModel");
 const getOrderData = async (req, res) => {
   try {
     const order = await Order.find()
-      .populate("product", "imageUrl title price")
+      .populate("product.productId", "imageUrl title price")
       .populate("customer", "firstName lastName");
     if (!order) {
       return res.status(404).json({ success: false, message: "No Order Yet" });
@@ -23,6 +23,7 @@ const getOrderData = async (req, res) => {
 };
 
 const getOrderById = async (req, res) => {
+  console.log(req.params);
   const id = req.params;
   console.log(id);
 
@@ -33,7 +34,9 @@ const getOrderById = async (req, res) => {
   }
 
   try {
-    const order = await Order.findById(id);
+    const order = await Order.findById(id)
+      .populate("product.productId", "imageUrl title price")
+      .populate("customer", "firstName lastName email , address.city");
     if (!order) {
       return res
         .status(404)
@@ -66,11 +69,11 @@ const addOrder = async (req, res) => {
     console.log(req.body);
 
     if (!product || product.quantity === 0) {
-        return res.status(400).json({
-          success: false,
-          message: "No Product Selected !",
-        });
-      }
+      return res.status(400).json({
+        success: false,
+        message: "No Product Selected !",
+      });
+    }
 
     const products = product.map((p, index) => ({
       productId: p.productId,
@@ -80,7 +83,6 @@ const addOrder = async (req, res) => {
     }));
 
     for (const i of products) {
-
       const productExist = await Product.findById(i?.productId);
 
       if (!productExist) {
@@ -137,10 +139,10 @@ const addOrder = async (req, res) => {
 
     const order = new Order({
       customer,
-      product : products,
+      product: products,
       paidAmount,
-      billingAddress : permanentAddress?.country,
-      shippingAddress : shippingAddress?.country,
+      billingAddress: permanentAddress?.country,
+      shippingAddress: shippingAddress?.country,
       paymentMethod,
       transactionId,
       status,
