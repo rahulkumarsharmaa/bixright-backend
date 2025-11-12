@@ -62,7 +62,7 @@ const addUnit = async (req, res) => {
     }
 
     const unit = new Unit({
-      name,
+      name : lowerName,
       status,
     });
 
