@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.get('/product-data', getProductData)
 router.get('/:id', getProductById)
-router.post('/add-product', upload.single('image'), addProduct)
+router.post('/add-product', upload.array('images', 10), addProduct)
 router.put('/update-product/:id', updateProduct )
 router.delete('/delete-product/:id', deleteProduct)
 router.delete('/bulk-delete', bulkDelete)

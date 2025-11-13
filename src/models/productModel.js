@@ -23,18 +23,21 @@ const productSchema = new mongoose.Schema(
       default: 0,
     },
     category: {
-      type: String,
-      enum: ["electronics", "groceries", "clothes", "furniture", "toys"],
-      default: "Not Selected",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "category",
+      required: true,
+    },
+    subCategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubCategory",
     },
     size: {
-      type: String,
-      enum: ["XS", "S", "M", "L", "XL", "N/A"],
-      default : 'N/A'
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Size",
     },
     brand: {
-      id : {type : mongoose.Schema.Types.ObjectId, ref : 'Brand'},
-      name : {type : String, },
+      id: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
+      name: { type: String },
     },
     quantity: {
       type: Number,
@@ -43,12 +46,22 @@ const productSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["Active", "InActive"],
-      default: "InActive",
+      enum: ["active", "inactive"],
+      default: "inactive",
     },
 
-    imageUrl: { type: String }, // Cloudinary URL
-    imageId: { type: String }, // Cloudinary public_id
+    isVisible: {
+      type: Boolean,
+    },
+
+    images: [
+      {
+        imageUrl: { type: String, required: true },
+        imageId: { type: String, required: true },
+        isCover: { type: Boolean, default: false }, // Optional: Flag for the main product image
+        sortOrder: { type: Number, default: 0 },
+      },
+    ],
   },
   { timestamps: true, versionKey: false }
 );
