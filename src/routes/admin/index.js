@@ -1,0 +1,50 @@
+const express = require("express");
+const router = express.Router()
+const { authenticateUser } = require("../../middleware/authMiddleware");
+const { authorizeUser } = require("../../middleware/roleMiddleware");
+
+const adminPanelSettingRoute = require('./adminPanelSettings')
+const attributeRoute = require('./attributeRoute')
+const brandRoute = require("./brandRoute");
+const categoryRoute = require("./categoryRoute");
+const colorRoute = require("./colorRoute");
+const customerRoute = require("./customerRoute");
+const dashboardRoute = require("./dashboardRoute");
+const kycRoute = require("./kycRoute");
+const orderRoute = require("./orderRoute");
+const productRoute = require("./productRoute");
+const purchaseRoute = require("./purchaseRoute");
+const refundRoute = require("./refundRoute");
+const sizeRoute = require("./sizeRoute");
+const stockRoute = require("./stockRoute");
+const subCategoryRoute = require("./subCategoryRoute");
+const supplierRoute = require("./supplierRoute");
+const supportTicketRoute = require("./supportTicketRoute");
+const tagRoute = require("./tagRoute");
+const unitsRoute = require("./unitsRoute");
+const userRoute = require("./userRoute");
+
+router.use(authenticateUser)
+
+router.use("/attribute", attributeRoute);
+router.use("/setting", adminPanelSettingRoute);
+router.use("/brand", brandRoute);
+router.use("/category", categoryRoute);
+router.use("/color", colorRoute);
+router.use("/customer", customerRoute);
+router.use("/dashboard", dashboardRoute);
+router.use("/kyc", kycRoute);
+router.use("/order", orderRoute);
+router.use("/product", productRoute);
+router.use("/purchase", purchaseRoute);
+router.use("/refund", refundRoute);
+router.use("/size", sizeRoute);
+router.use("/stock", stockRoute);
+router.use("/subCategory", subCategoryRoute);
+router.use("/supplier", supplierRoute);
+router.use("/support", supportTicketRoute);
+router.use("/tag", tagRoute);
+router.use("/unit", unitsRoute);
+router.use("/users", userRoute);
+
+module.exports = router
