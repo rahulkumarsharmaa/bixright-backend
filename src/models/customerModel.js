@@ -11,7 +11,7 @@ const customerSchema = new mongoose.Schema(
     },
     dob: {
       type: Date,
-      required : true,
+      // required : true,
     },
     gender: {
       type: String,
@@ -100,7 +100,7 @@ const customerSchema = new mongoose.Schema(
     remark: {
       type: String,
     },
-},
+  },
   { timestamps: true, versionKey: false }
 );
 

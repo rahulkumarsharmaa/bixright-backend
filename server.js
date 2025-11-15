@@ -13,12 +13,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoute);
 app.use("/api/admin", adminRoute);
+require("./src/routes/customer/index.js")(app);
 
 app.get("/", (req, res) => {
   res.send("Home");
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT,'0.0.0.0', () => {
   console.log(`Server running on PORT : ${PORT}`);
 });
