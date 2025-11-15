@@ -1,0 +1,121 @@
+const categoryModel = require("../../models/categoryModel");
+const SubCategory = require("../../models/subcategoryModel");
+const mongoose = require("mongoose");
+
+exports.getActiveCategories = async (req, res) => {
+  try {
+    // Get query params
+    let { page = 1, limit = 10 } = req.query;
+
+    // Convert to number
+    page = Number(page);
+    limit = Number(limit);
+
+    // Base filter
+    const filter = { status: "Active" };
+
+    let categories;
+    let total;
+    const projection = { title: 1, slug: 1, description: 1 };
+
+    if (page === -1) {
+      // Return all active categories
+      categories = await categoryModel
+        .find(filter, projection)
+        .sort({ createdAt: -1 });
+      total = categories.length;
+    } else {
+      // Paginated query
+      const skip = (page - 1) * limit;
+      [categories, total] = await Promise.all([
+        categoryModel
+          .find(filter, projection)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit),
+        categoryModel.countDocuments(filter),
+      ]);
+    }
+
+    res.status(200).json({
+      success: true,
+      total,
+      page: page === -1 ? null : page,
+      totalPages: page === -1 ? 1 : Math.ceil(total / limit),
+      data: categories,
+    });
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.getActiveSubCategories = async (req, res) => {
+  try {
+    let { page = 1, limit = 10, categoryId } = req.query;
+
+    page = Number(page);
+    limit = Number(limit);
+
+    const filter = { status: "Active" };
+
+    if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
+      filter["parentCategory.id"] = categoryId;
+    }
+
+    let subCategories;
+    let total;
+
+    if (page === -1) {
+      // Return all active subcategories
+      subCategories = await SubCategory.find(filter)
+        .sort({ createdAt: -1 })
+        .select("title slug description parentCategory.id parentCategory.name");
+
+      total = subCategories.length;
+    } else {
+      const skip = (page - 1) * limit;
+
+      [subCategories, total] = await Promise.all([
+        SubCategory.find(filter)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .select(
+            "title slug description parentCategory.id parentCategory.name"
+          ),
+        SubCategory.countDocuments(filter),
+      ]);
+    }
+
+    //  Flatten the parentCategory object
+    const formattedData = subCategories.map((item) => ({
+      _id: item._id,
+      title: item.title,
+      slug: item.slug,
+      description: item.description,
+      categoryId: item.parentCategory?.id || null,
+      categoryName: item.parentCategory?.name || null,
+      status: item.status,
+    }));
+
+    res.status(200).json({
+      success: true,
+      total,
+      page: page === -1 ? null : page,
+      totalPages: page === -1 ? 1 : Math.ceil(total / limit),
+      data: formattedData,
+    });
+  } catch (error) {
+    console.error("Error fetching subcategories:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
