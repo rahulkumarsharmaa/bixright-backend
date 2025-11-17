@@ -1,5 +1,6 @@
 const categoryModel = require("../../models/categoryModel");
 const SubCategory = require("../../models/subcategoryModel");
+const Brand = require("../../models/brandModel");
 const mongoose = require("mongoose");
 
 exports.getActiveCategories = async (req, res) => {
@@ -119,3 +120,50 @@ exports.getActiveSubCategories = async (req, res) => {
     });
   }
 };
+
+
+// GET all active brands with pagination
+exports.getActiveBrands = async (req, res) => {
+  try {
+    let { page = 1, limit = 10 } = req.query;
+
+    // Convert to numbers
+    page = Number(page);
+    limit = Number(limit);
+
+    // Query only active brands
+    const filter = { status: "Active" };
+
+    let brands, totalBrands;
+
+    if (page === -1) {
+      // Fetch all brands if page = -1
+      brands = await Brand.find(filter).sort({ createdAt: -1 });
+      totalBrands = brands.length;
+    } else {
+      // Paginated fetch
+      totalBrands = await Brand.countDocuments(filter);
+      const skip = (page - 1) * limit;
+      brands = await Brand.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+    }
+
+    res.status(200).json({
+      success: true,
+      totalItems: totalBrands,
+      totalPages: page === -1 ? 1 : Math.ceil(totalBrands / limit),
+      currentPage: page === -1 ? "all" : page,
+      data: brands,
+    });
+  } catch (error) {
+    console.error("Error fetching brands:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch active brands",
+      error: error.message,
+    });
+  }
+};
+
