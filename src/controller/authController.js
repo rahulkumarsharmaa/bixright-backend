@@ -1,6 +1,7 @@
 const Admin = require("../models/adminUserModel");
 const { hashPassword, comparePassword } = require("../utils/bcrypt");
 const { generateToken } = require("../utils/jwt");
+const axios = require("axios");
 
 const register = async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -26,7 +27,7 @@ const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role
+      role,
     });
 
     await admin.save();
@@ -44,6 +45,9 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   const { email, password } = req.body;
+
+  const getIP = (req) =>
+    req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
 
   try {
     if (!email || !password) {
@@ -70,8 +74,9 @@ const login = async (req, res) => {
     }
 
     const payload = {
-      _id: existingUser._id,
-      email: existingUser.email,
+      _id: existingUser?._id,
+      email: existingUser?.email,
+      role: existingUser?.role,
     };
 
     const token = await generateToken(payload);
@@ -82,6 +87,25 @@ const login = async (req, res) => {
         .status(500)
         .json({ success: false, message: "Internal Server Error" });
     }
+
+    // 2️⃣ Get IP
+    const ip = getIP(req);
+
+    // 3️⃣ Get approximate location
+    const loc = await axios.get(`https://ipapi.co/${ip}/json/`);
+    console.log(loc)
+    const locationData = {
+      ip,
+      city: loc.data.city,
+      region: loc.data.region,
+      country: loc.data.country_name,
+      timezone: loc.data.timezone,
+      loginAt: new Date(),
+    };
+
+    existingUser.location = locationData;
+    await existingUser.save();
+
     return res
       .status(200)
       .json({ success: true, message: "Login Successful !", token });
@@ -103,13 +127,11 @@ const getMyProfile = async (req, res) => {
         .json({ success: false, message: "No Profile Found" });
     }
 
-    console.log(user)
+    console.log(user);
 
     return res
       .status(200)
       .json({ success: true, message: "User Fetched", user });
-
-
   } catch (error) {
     return res
       .status(error.status || 500)

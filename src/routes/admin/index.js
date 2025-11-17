@@ -5,6 +5,7 @@ const { authorizeUser } = require("../../middleware/roleMiddleware");
 
 const adminPanelSettingRoute = require('./adminPanelSettings')
 const attributeRoute = require('./attributeRoute')
+const bannerRoute = require("./bannerRoute");
 const brandRoute = require("./brandRoute");
 const categoryRoute = require("./categoryRoute");
 const colorRoute = require("./colorRoute");
@@ -24,11 +25,13 @@ const tagRoute = require("./tagRoute");
 const unitsRoute = require("./unitsRoute");
 const userRoute = require("./userRoute");
 
+
 router.use(authenticateUser)
 
 router.use("/attribute", attributeRoute);
 router.use("/setting", adminPanelSettingRoute);
 router.use("/brand", brandRoute);
+router.use("/banner", bannerRoute);
 router.use("/category", categoryRoute);
 router.use("/color", colorRoute);
 router.use("/customer", customerRoute);
