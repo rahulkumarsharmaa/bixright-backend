@@ -1,13 +1,18 @@
 const cloudinary = require("../../config/cloudinaryConfig");
+const {
+  generateProductVariants,
+} = require("../../helpers/generateProductVariants");
+
 const Brand = require("../../models/brandModel");
 const Category = require("../../models/categoryModel");
+const Color = require("../../models/colourModel");
 const Product = require("../../models/productModel");
 const Size = require("../../models/sizeModel");
 const SubCategory = require("../../models/subcategoryModel");
 
 const getProductData = async (req, res) => {
   try {
-    console.log('product controller', req.user )
+    console.log("product controller", req.user);
     const product = await Product.find();
     if (!product || product.length === 0) {
       return res
@@ -57,24 +62,23 @@ const addProduct = async (req, res) => {
       title,
       subTitle,
       description,
-      price,
-      discount,
+      brand,
       category,
       subCategory,
       size,
-      brand,
-      quantity,
-      status,
-      isVisible,
+      color,
+      basePrice,
     } = req.body;
+
+    console.log(req.body);
 
     if (
       !title ||
       !description ||
-      !price ||
-      !quantity ||
+      !basePrice ||
       !category ||
       !size ||
+      !color ||
       !brand
     ) {
       return res.status(400).json({
@@ -142,20 +146,41 @@ const addProduct = async (req, res) => {
         .json({ success: false, message: "Sub Category not found" });
     }
 
-    const sizeData = await Size.findById(size);
-
-    if (!sizeData) {
+    const sizeData = await Size.find({ _id: { $in: size } });
+    if (sizeData.length !== size.length) {
       return res
         .status(400)
-        .json({ success: false, message: "Size not found" });
+        .json({ success: false, message: "One or more sizes are invalid" });
     }
+
+    // Check colors
+    const colorData = await Color.find({ _id: { $in: color } });
+    if (colorData.length !== color.length) {
+      return res
+        .status(400)
+        .json({ success: false, message: "One or more colors are invalid" });
+    }
+
+    console.log(sizeData)
+    console.log(colorData)
+    
+
+    const sizesToSave = sizeData.map((s) => ({ id: s._id }));
+    const colorsToSave = colorData.map((c) => ({ id: c._id }));
+
+    console.log(sizesToSave)
+    console.log(colorsToSave)
+
 
     const product = new Product({
       title,
       subTitle,
       description,
-      price,
-      discount,
+      basePrice,
+      brand: {
+        id: brandData?._id,
+        name: brandData?.title,
+      },
       category: {
         id: categoryData?._id,
         name: categoryData?.title,
@@ -164,20 +189,12 @@ const addProduct = async (req, res) => {
         id: subCategoryData?._id,
         name: subCategoryData?.title,
       },
-      size: {
-        id: sizeData?._id,
-        name: sizeData?.title,
-      },
-      brand: {
-        id: brandData?._id,
-        name: brandData?.title,
-      },
-      quantity,
-      status,
-      isVisible,
-
+      size: sizesToSave,
+      color: colorsToSave,
       images: productImages,
     });
+
+    await generateProductVariants(product);
 
     await product.save();
 

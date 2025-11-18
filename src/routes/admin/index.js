@@ -25,6 +25,7 @@ const supplierRoute = require("./supplierRoute");
 const supportTicketRoute = require("./supportTicketRoute");
 const tagRoute = require("./tagRoute");
 const unitsRoute = require("./unitsRoute");
+const variantRoute = require("./variantRoute");
 const userRoute = require("./userRoute");
 
 
@@ -52,6 +53,7 @@ router.use("/supplier", supplierRoute);
 router.use("/support", supportTicketRoute);
 router.use("/tag", tagRoute);
 router.use("/unit", unitsRoute);
+router.use("/variant", variantRoute);
 router.use("/users", userRoute);
 
 module.exports = router
