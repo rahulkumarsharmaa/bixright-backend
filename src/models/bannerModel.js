@@ -5,13 +5,11 @@ const bannerSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     subTitle: {
       type: String,
       lowercase: true,
-      unique: true,
       required: true,
     },
     linkUrl: {
