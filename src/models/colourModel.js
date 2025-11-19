@@ -7,6 +7,7 @@ const colorSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
+      set: (v) => v.replace(/\s+/g, "-"),
     },
 
     status: {

@@ -5,15 +5,16 @@ const sizeSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
-      lowercase : true,
+      lowercase: true,
       unique: true,
       trim: true,
+      set: (v) => v.replace(/\s+/g, "-"),
     },
 
     code: {
       type: String,
       unique: true,
-      lowercase : true,
+      lowercase: true,
       unique: true,
       trim: true,
     },

@@ -1,10 +1,14 @@
+const Product = require("../../models/productModel");
 const Variant = require("../../models/variantModel");
 const getVariantData = async (req, res) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
     console.log(id);
     console.log(req.params);
-    const variant = await Variant.find({ product: id });
+    const variant = await Variant.find({ product: id }).populate(
+      "product",
+      "title"
+    );
     if (!variant) {
       return res
         .status(404)
@@ -44,28 +48,41 @@ const getVariantById = async (req, res) => {
 const addVariant = async (req, res) => {
   try {
     console.log(req.body);
-    const { name, status } = req.body;
+    const { product, color, size } = req.body;
 
-    if (!name) {
+    if (!product || !color || !size) {
       return res.status(400).json({
         success: false,
         message: "Details Missing !",
       });
     }
 
-    const lowerName = name.toLowerCase();
+    const productExist = await Product.findById(product);
 
-    const existing = await Variant.findOne({ name: lowerName });
+    if (!productExist) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product Not Found" });
+    }
+
+    const lowerProduct = product.toLowerCase();
+    const lowerSize = size.toLowerCase();
+    const lowerColor = color.toLowerCase();
+
+    const existing = await Variant.findOne({
+      $and: [{product : lowerProduct}, { size: lowerSize }, { color: lowerColor }],
+    });
     if (existing) {
       return res.status(400).json({
         success: false,
-        message: "Variant Already Exist !",
+        message: "Variant For This Product Already Exist !",
       });
     }
 
     const variant = new Variant({
-      name: lowerName,
-      status,
+      product : lowerProduct,
+      color: lowerColor,
+      size: lowerSize,
     });
 
     await variant.save();

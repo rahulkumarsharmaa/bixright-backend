@@ -14,6 +14,7 @@ const variantSchema = new mongoose.Schema({
     unique: true,
     uppercase: true,
     trim: true,
+    set: (v) => v.replace(/\s+/g, "-"),
   },
 
   quantity: {
@@ -21,8 +22,19 @@ const variantSchema = new mongoose.Schema({
     default: 0,
   },
 
-  size: { type: String },
-  color: { type: String },
+  size: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    set: (v) => v.replace(/\s+/g, "-"),
+  },
+
+  color: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    set: (v) => v.replace(/\s+/g, "-"),
+  },
 
   price: {
     type: Number,
@@ -40,7 +52,7 @@ const variantSchema = new mongoose.Schema({
   },
 });
 
-variantSchema.pre("save", function (next) {
+variantSchema.pre("validate", function (next) {
   if (this.sku) return next();
 
   if (!this.color || !this.size) {
