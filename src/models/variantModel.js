@@ -43,6 +43,7 @@ const variantSchema = new mongoose.Schema({
 
   image: {
     type: String,
+    default : null
   },
 
   status: {

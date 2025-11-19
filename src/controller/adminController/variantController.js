@@ -1,4 +1,7 @@
+const Color = require("../../models/colourModel");
+const cloudinary = require("../../config/cloudinaryConfig");
 const Product = require("../../models/productModel");
+const Size = require("../../models/sizeModel");
 const Variant = require("../../models/variantModel");
 const getVariantData = async (req, res) => {
   try {
@@ -65,12 +68,20 @@ const addVariant = async (req, res) => {
         .json({ success: false, message: "Product Not Found" });
     }
 
-    const lowerProduct = product.toLowerCase();
-    const lowerSize = size.toLowerCase();
-    const lowerColor = color.toLowerCase();
+    const colorData = await Color.findById(color);
+    const sizeData = await Size.findById(size);
+
+    console.log(colorData);
+    console.log(sizeData);
+
+    const colorTitle = colorData?.title;
+    const sizeTitle = sizeData?.title;
+
+    const lowerSize = sizeTitle.toLowerCase();
+    const lowerColor = colorTitle.toLowerCase();
 
     const existing = await Variant.findOne({
-      $and: [{product : lowerProduct}, { size: lowerSize }, { color: lowerColor }],
+      $and: [{ product: product }, { size: lowerSize }, { color: lowerColor }],
     });
     if (existing) {
       return res.status(400).json({
@@ -80,7 +91,7 @@ const addVariant = async (req, res) => {
     }
 
     const variant = new Variant({
-      product : lowerProduct,
+      product: product,
       color: lowerColor,
       size: lowerSize,
     });
@@ -101,7 +112,12 @@ const updateVariant = async (req, res) => {
   try {
     const variantId = req.params.id;
     const data = req.body;
-    console.log(data);
+    const file = req.file;
+
+    console.log("data", data);
+    console.log("file", file);
+
+    let imageUrl = null;
 
     if (!variantId) {
       return res
@@ -118,6 +134,26 @@ const updateVariant = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Variant not found" });
     }
+
+    if (file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "variants" },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+
+        stream.end(file.buffer); // upload buffer
+      });
+
+      imageUrl = uploadResult.secure_url;
+    }
+
+    variant.image = imageUrl;
+
+    await variant.save();
 
     return res.status(200).json({
       success: true,
