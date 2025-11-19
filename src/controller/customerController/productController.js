@@ -1,5 +1,6 @@
 const ProductModel = require("../../models/productModel");
 const mongoose = require("mongoose");
+const VariantModel = require("../../models/variantModel");
 
 exports.getActiveProducts = async (req, res) => {
   try {
@@ -15,7 +16,8 @@ exports.getActiveProducts = async (req, res) => {
     limit = Number(limit);
 
     // Base filter
-    const filter = { status: "active" };
+    // const filter = { status: "active" };
+    const filter = {};
 
     // Filter by categoryId
     if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
@@ -53,36 +55,31 @@ exports.getActiveProducts = async (req, res) => {
           .skip(skip)
           .limit(limit)
           .select(
-            "title subTitle description price discount category.id category.name subCategory.id subCategory.name size.id size.name brand.id brand.name quantity images status isVisible createdAt updatedAt"
+            "title subTitle description category.id category.name subCategory.id subCategory.name size brand.id brand.name quantity images status basePrice"
           ),
         ProductModel.countDocuments(filter),
       ]);
     }
 
     //  Flatten structure for frontend
- const formattedProducts = products.map((item) => {
-  const coverImage = item.images?.find((image) => image.isCover);
-
-  return {
-    _id: item._id,
-    title: item.title,
-    subTitle: item.subTitle,
-    description: item.description,
-    price: item.price,
-    discount: item.discount,
-    categoryId: item.category?.id || null,
-    categoryName: item.category?.name || null,
-    subCategoryId: item.subCategory?.id || null,
-    subCategoryName: item.subCategory?.name || null,
-    sizeId: item.size?.id || null,
-    sizeName: item.size?.name || null,
-    brandId: item.brand?.id || null,
-    brandName: item.brand?.name || null,
-    quantity: item.quantity,
-    images: [coverImage] || null, 
-  };
-});
-
+    const formattedProducts = products.map((item) => {
+      const coverImage = item.images?.find((image) => image.isCover);
+      
+      return {
+        _id: item._id,
+        title: item.title,
+        subTitle: item.subTitle,
+        description: item.description,
+        basePrice: item.basePrice,
+        categoryId: item.category?.id || null,
+        categoryName: item.category?.name || null,
+        subCategoryId: item.subCategory?.id || null,
+        subCategoryName: item.subCategory?.name || null,
+        brandId: item.brand?.id || null,
+        brandName: item.brand?.name || null,
+        images: [coverImage] || null,
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -105,7 +102,7 @@ exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Validate ID
+    //  Validate ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
@@ -113,9 +110,9 @@ exports.getProductById = async (req, res) => {
       });
     }
 
-    // Fetch product
+    //  Fetch product
     const product = await ProductModel.findById(id).select(
-      "title subTitle description price discount category.id category.name subCategory.id subCategory.name size.id size.name brand.id brand.name quantity images status isVisible createdAt updatedAt"
+      "title subTitle description basePrice discount category.id category.name subCategory.id subCategory.name size.id size.name brand.id brand.name images createdAt updatedAt"
     );
 
     if (!product) {
@@ -125,28 +122,28 @@ exports.getProductById = async (req, res) => {
       });
     }
 
-    // Flatten nested fields for frontend
+    //  Fetch variants linked to this product
+    const variants = await VariantModel.find({ product: id }).select(
+      "_id sku size color price quantity image status"
+    );
+
+    //  Format response for frontend
     const formattedProduct = {
       _id: product._id,
       title: product.title,
       subTitle: product.subTitle,
       description: product.description,
-      price: product.price,
-      discount: product.discount,
+      basePrice: product.basePrice,
       categoryId: product.category?.id || null,
       categoryName: product.category?.name || null,
       subCategoryId: product.subCategory?.id || null,
       subCategoryName: product.subCategory?.name || null,
-      sizeId: product.size?.id || null,
-      sizeName: product.size?.name || null,
       brandId: product.brand?.id || null,
       brandName: product.brand?.name || null,
-      quantity: product.quantity,
-      images: product.images,
-      status: product.status,
-      isVisible: product.isVisible,
+      variants,
     };
 
+    //  Response
     res.status(200).json({
       success: true,
       data: formattedProduct,
