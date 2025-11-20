@@ -14,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoute);
 app.use("/api/admin", adminRoute);
 require("./src/routes/customer/index.js")(app);
+require("./src/routes/app/index.js")(app);
 
 app.get("/", (req, res) => {
   res.send("Home");

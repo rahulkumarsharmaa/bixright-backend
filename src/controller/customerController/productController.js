@@ -64,7 +64,7 @@ exports.getActiveProducts = async (req, res) => {
     //  Flatten structure for frontend
     const formattedProducts = products.map((item) => {
       const coverImage = item.images?.find((image) => image.isCover);
-      
+
       return {
         _id: item._id,
         title: item.title,
@@ -111,9 +111,7 @@ exports.getProductById = async (req, res) => {
     }
 
     //  Fetch product
-    const product = await ProductModel.findById(id).select(
-      "title subTitle description basePrice discount category.id category.name subCategory.id subCategory.name size.id size.name brand.id brand.name images createdAt updatedAt"
-    );
+    const product = await ProductModel.findById(id);
 
     if (!product) {
       return res.status(404).json({
@@ -140,8 +138,11 @@ exports.getProductById = async (req, res) => {
       subCategoryName: product.subCategory?.name || null,
       brandId: product.brand?.id || null,
       brandName: product.brand?.name || null,
+      images: product.images || [],
       variants,
     };
+
+    console.log(product, "pppppp");
 
     //  Response
     res.status(200).json({
