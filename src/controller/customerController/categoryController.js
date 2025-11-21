@@ -13,7 +13,7 @@ exports.getActiveCategories = async (req, res) => {
     limit = Number(limit);
 
     // Base filter
-    const filter = { status: "Active" };
+    const filter = { status: "active" };
 
     let categories;
     let total;
@@ -62,7 +62,7 @@ exports.getActiveSubCategories = async (req, res) => {
     page = Number(page);
     limit = Number(limit);
 
-    const filter = { status: "Active" };
+    const filter = { status: "active" };
 
     if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
       filter["parentCategory.id"] = categoryId;
@@ -75,7 +75,9 @@ exports.getActiveSubCategories = async (req, res) => {
       // Return all active subcategories
       subCategories = await SubCategory.find(filter)
         .sort({ createdAt: -1 })
-        .select("title slug description parentCategory.id parentCategory.name");
+        .select(
+          "title slug description parentCategory.id parentCategory.name image"
+        );
 
       total = subCategories.length;
     } else {
@@ -87,22 +89,26 @@ exports.getActiveSubCategories = async (req, res) => {
           .skip(skip)
           .limit(limit)
           .select(
-            "title slug description parentCategory.id parentCategory.name"
+            "title slug description parentCategory.id parentCategory.name image"
           ),
         SubCategory.countDocuments(filter),
       ]);
     }
 
     //  Flatten the parentCategory object
-    const formattedData = subCategories.map((item) => ({
-      _id: item._id,
-      title: item.title,
-      slug: item.slug,
-      description: item.description,
-      categoryId: item.parentCategory?.id || null,
-      categoryName: item.parentCategory?.name || null,
-      status: item.status,
-    }));
+    const formattedData = subCategories.map((item) => {
+      item = item.toObject();
+      return {
+        image: item.image || "",
+        _id: item._id,
+        title: item.title,
+        slug: item.slug,
+        description: item.description,
+        categoryId: item.parentCategory?.id || null,
+        categoryName: item.parentCategory?.name || null,
+        status: item.status,
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -120,7 +126,6 @@ exports.getActiveSubCategories = async (req, res) => {
     });
   }
 };
-
 
 // GET all active brands with pagination
 exports.getActiveBrands = async (req, res) => {
@@ -166,4 +171,3 @@ exports.getActiveBrands = async (req, res) => {
     });
   }
 };
-
