@@ -37,16 +37,37 @@ exports.getActiveProducts = async (req, res) => {
     }
 
     // Filter by brandId
-    if (brandId && mongoose.Types.ObjectId.isValid(brandId)) {
-      filter["brand.id"] = brandId;
+ if (brandId) {
+      const brandIds = brandId
+        .split(",")
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      if (brandIds.length > 0) {
+        filter["brand.id"] = { $in: brandIds };
+      }
     }
 
-    if (sizeId && mongoose.Types.ObjectId.isValid(sizeId)) {
-      filter["size.id"] = sizeId;
+    if (sizeId) {
+      const sizeIds = sizeId
+        .split(",")
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      if (sizeIds.length > 0) {
+        filter["size.id"] = { $in: sizeIds };
+      }
     }
 
-    if (colorId && mongoose.Types.ObjectId.isValid(colorId)) {
-      filter["color.id"] = colorId;
+    if (colorId) {
+      const colorIds = colorId
+        .split(",")
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      if (colorIds.length > 0) {
+        filter["color.id"] = { $in: colorIds };
+      }
     }
 
     if (minPrice || maxPrice) {
@@ -272,6 +293,66 @@ exports.fetchfilter = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+
+exports.getRecentlyAddedProducts = async (req, res) => {
+  try {
+   
+    let { page = 1, limit = 10 } = req.query;
+    page = Number(page);
+    limit = Number(limit);
+
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
+
+    // Fetch products sorted by createdAt (descending)
+    const products = await ProductModel.find({ isDeleted: false })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+
+    // Get total count for pagination metadata
+    const totalCount = await ProductModel.countDocuments({ isDeleted: false });
+
+      const formattedProducts = products.map((item) => {
+      const coverImage = item.images?.find((image) => image.isCover);
+
+      return {
+        _id: item._id,
+        title: item.title,
+        subTitle: item.subTitle,
+        description: item.description,
+        basePrice: item.basePrice,
+        categoryId: item.category?.id || null,
+        categoryName: item.category?.name || null,
+        subCategoryId: item.subCategory?.id || null,
+        subCategoryName: item.subCategory?.name || null,
+        brandId: item.brand?.id || null,
+        brandName: item.brand?.name || null,
+        images: [coverImage] || null,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Recently added products fetched successfully",
+      data: formattedProducts,
+      pagination: {
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching recently added products:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching products",
       error: error.message,
     });
   }

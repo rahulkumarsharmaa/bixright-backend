@@ -25,7 +25,7 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
-    // 🛍️ Ordered products
+    //  Ordered products
     product: [
       {
         productId: {
@@ -33,14 +33,18 @@ const orderSchema = new mongoose.Schema(
           ref: "Product",
           required: true,
         },
-        price: { type: Number, required: true },
+         variantId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Variant",
+          required: true,
+        },       
         quantity: { type: Number, required: true, min: 1 },
         discount: { type: Number, default: 0 },
         total: { type: Number },
       },
     ],
 
-    // 🏠 Addresses
+    //  Addresses
     billingAddress: {
       addressLine1: { type: String },
       addressLine2: { type: String },
@@ -58,7 +62,7 @@ const orderSchema = new mongoose.Schema(
       postalCode: { type: String },
     },
 
-    // 💳 Payment Info
+    //  Payment Info
     paymentMethod: {
       type: String,
       enum: ["cash", "credit-card", "upi", "bank-transfer"],
@@ -71,7 +75,7 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
     },
 
-    // 📦 Order Status
+    //  Order Status
     orderStatus: {
       type: String,
       enum: [
