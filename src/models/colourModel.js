@@ -15,6 +15,15 @@ const colorSchema = new mongoose.Schema(
       enum: ["Active", "InActive"],
       default: "InActive",
     },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true, versionKey: false }
 );

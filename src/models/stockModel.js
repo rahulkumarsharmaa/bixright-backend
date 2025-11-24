@@ -31,6 +31,16 @@ const stockSchema = new mongoose.Schema(
       trim: true,
       maxlength: 200,
     },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+    
   },
   { timestamps: true, versionKey: false }
 );

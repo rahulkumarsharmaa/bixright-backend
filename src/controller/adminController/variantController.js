@@ -3,15 +3,19 @@ const cloudinary = require("../../config/cloudinaryConfig");
 const Product = require("../../models/productModel");
 const Size = require("../../models/sizeModel");
 const Variant = require("../../models/variantModel");
+
+
+
 const getVariantData = async (req, res) => {
   try {
     const { id } = req.params;
     console.log(id);
     console.log(req.params);
-    const variant = await Variant.find({ product: id }).populate(
-      "product",
-      "title"
-    );
+    const variant = await Variant.find({
+      product: id,
+      isDeleted: false,
+    }).populate("product", "title");
+
     if (!variant) {
       return res
         .status(404)
@@ -37,6 +41,13 @@ const getVariantById = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "No Variant Found" });
+    }
+
+    if (variant.isDeleted === true) {
+      return res.status(404).json({
+        success: false,
+        message: "No Variant Found",
+      });
     }
 
     return res
@@ -213,11 +224,41 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteVariant = async (req, res) => {
+  try {
+    const variant = await Variant.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!variant) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Variant not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Variant Deleted",
+      variant,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
+
   getVariantData,
   getVariantById,
   addVariant,
   updateVariant,
   deleteVariant,
   bulkDelete,
+  softDeleteVariant,
 };

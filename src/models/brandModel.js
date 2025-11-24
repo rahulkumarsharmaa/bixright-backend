@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const slugify = require('slugify')
+const slugify = require("slugify");
 
 const brandSchema = new mongoose.Schema(
   {
@@ -19,6 +19,15 @@ const brandSchema = new mongoose.Schema(
       type: String,
       enum: ["Active", "InActive"],
       default: "InActive",
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true, versionKey: false }

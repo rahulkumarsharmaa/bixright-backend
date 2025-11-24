@@ -3,6 +3,11 @@ const slugify = require("slugify");
 
 const subCategorySchema = new mongoose.Schema(
   {
+    image: {
+      type: String,
+      default: null,
+    },
+
     title: {
       type: String,
       required: true,
@@ -24,8 +29,17 @@ const subCategorySchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Active", "InActive"],
-      default: "InActive",
+      enum: ["active", "inactive"],
+      default: "active",
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true, versionKey: false }

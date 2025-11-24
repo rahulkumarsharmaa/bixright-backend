@@ -43,13 +43,22 @@ const variantSchema = new mongoose.Schema({
 
   image: {
     type: String,
-    default : null
+    default: null,
   },
 
   status: {
     type: String,
     enum: ["instock", "lowstock", "outofstock"],
     default: "instock",
+  },
+
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  deletedAt: {
+    type: Date,
+    default: null,
   },
 });
 

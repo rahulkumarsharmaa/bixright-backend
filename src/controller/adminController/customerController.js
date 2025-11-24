@@ -193,6 +193,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteCustomer = async (req, res) => {
+  try {
+    const customer = await Customer.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Customer Deleted",
+      customer,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getCustomerData,
   getCustomerById,
@@ -200,4 +228,5 @@ module.exports = {
   updateCustomer,
   deleteCustomer,
   bulkDelete,
+  softDeleteCustomer
 };

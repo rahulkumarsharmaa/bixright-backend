@@ -75,7 +75,7 @@ const addCoupon = async (req, res) => {
       usageLimit,
       usageNumberPerUser,
       usedBy: [],
-      usedCount : 0,
+      usedCount: 0,
       status,
     });
 
@@ -176,11 +176,40 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteCoupon = async (req, res) => {
+  try {
+    const coupon = await Coupon.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!coupon) {
+      return res
+        .status(404)
+        .json({ success: false, message: "coupon not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Coupon Deleted",
+      coupon,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getCouponData,
   getCouponById,
   addCoupon,
   updateCoupon,
   deleteCoupon,
+  softDeleteCoupon,
   bulkDelete,
 };

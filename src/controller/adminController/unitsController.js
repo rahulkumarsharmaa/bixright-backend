@@ -3,9 +3,7 @@ const getUnitData = async (req, res) => {
   try {
     const unit = await Unit.find();
     if (!unit) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No Unit Found" });
+      return res.status(404).json({ success: false, message: "No Unit Found" });
     }
 
     return res
@@ -24,9 +22,7 @@ const getUnitById = async (req, res) => {
   try {
     const unit = await Unit.findById(id);
     if (!unit) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No Unit Found" });
+      return res.status(404).json({ success: false, message: "No Unit Found" });
     }
 
     return res
@@ -40,7 +36,7 @@ const getUnitById = async (req, res) => {
 
 const addUnit = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log(req.body);
     const { name, status } = req.body;
 
     if (!name) {
@@ -50,19 +46,18 @@ const addUnit = async (req, res) => {
       });
     }
 
-    const lowerName = name.toLowerCase()
+    const lowerName = name.toLowerCase();
 
-    const existing = await Unit.findOne({name : lowerName})
-    if(existing){
-       return res.status(400).json({
+    const existing = await Unit.findOne({ name: lowerName });
+    if (existing) {
+      return res.status(400).json({
         success: false,
         message: "Unit Already Exist !",
       });
-
     }
 
     const unit = new Unit({
-      name : lowerName,
+      name: lowerName,
       status,
     });
 
@@ -158,6 +153,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteUnit = async (req, res) => {
+  try {
+    const unit = await Unit.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!unit) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Unit not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Unit Deleted",
+      unit,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getUnitData,
   getUnitById,
@@ -165,4 +188,5 @@ module.exports = {
   updateUnit,
   deleteUnit,
   bulkDelete,
+  softDeleteUnit
 };

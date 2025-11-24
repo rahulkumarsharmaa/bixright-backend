@@ -21,7 +21,7 @@ const reviewSchema = new mongoose.Schema(
       required: true,
     },
 
-    comment : {
+    comment: {
       type: String,
       required: true,
     },
@@ -29,6 +29,14 @@ const reviewSchema = new mongoose.Schema(
     isDeleted: {
       type: Boolean,
       default: false,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true, versionKey: false }

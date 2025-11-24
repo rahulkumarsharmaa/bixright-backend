@@ -156,6 +156,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteReview = async (req, res) => {
+  try {
+    const review = await Review.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!review) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Review not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Review Deleted",
+      review,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getReviewData,
   getReviewById,
@@ -163,4 +191,5 @@ module.exports = {
   updateReview,
   deleteReview,
   bulkDelete,
+  softDeleteReview
 };

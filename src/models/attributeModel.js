@@ -8,7 +8,16 @@ const attributeSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
-  
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
     status: {
       type: String,
       enum: ["Active", "InActive"],

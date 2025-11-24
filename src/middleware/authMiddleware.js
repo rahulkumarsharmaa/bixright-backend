@@ -20,12 +20,14 @@ const authenticateUser = async (req, res, next) => {
     }
 
     req.user = verifiedToken._id;
-    console.log(req.user)
+    console.log(req.user);
 
-    next()
+    next();
   } catch (error) {
     console.log(error);
-    throw new Error("Token Validation Error");
+    return res
+      .status(401)
+      .json({ success: false, message: "Token Validation Error" });
   }
 };
 

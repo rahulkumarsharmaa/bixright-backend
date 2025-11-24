@@ -13,7 +13,7 @@ const SubCategory = require("../../models/subcategoryModel");
 const getProductData = async (req, res) => {
   try {
     console.log("product controller", req.user);
-    const product = await Product.find();
+    const product = await Product.find({ isDeleted: false });
     if (!product || product.length === 0) {
       return res
         .status(404)
@@ -47,6 +47,13 @@ const getProductById = async (req, res) => {
         .json({ success: false, message: "No product Found" });
     }
 
+    if (product.isDeleted === true) {
+      return res.status(404).json({
+        success: false,
+        message: "No Product Found",
+      });
+    }
+
     return res
       .status(200)
       .json({ success: true, message: "product Fetched", product });
@@ -57,6 +64,8 @@ const getProductById = async (req, res) => {
 };
 
 const addProduct = async (req, res) => {
+  console.log("body", req.body);
+  console.log("file", req.file);
   try {
     const {
       title,
@@ -161,16 +170,14 @@ const addProduct = async (req, res) => {
         .json({ success: false, message: "One or more colors are invalid" });
     }
 
-    console.log(sizeData)
-    console.log(colorData)
-    
+    console.log(sizeData);
+    console.log(colorData);
 
     const sizesToSave = sizeData.map((s) => ({ id: s._id }));
     const colorsToSave = colorData.map((c) => ({ id: c._id }));
 
-    console.log(sizesToSave)
-    console.log(colorsToSave)
-
+    console.log(sizesToSave);
+    console.log(colorsToSave);
 
     const product = new Product({
       title,
@@ -226,115 +233,258 @@ const uploadToCloudinary = (fileBuffer) => {
   });
 };
 
-const updateProduct = async (req, res) => {
-  const productId = req.params.id;
-  const {
-    brand, // The ID of the brand (potential change)
-    imagesToDelete, // Comma-separated string of imageIds to delete
-    ...updateFields // All other text fields (title, price, description, etc.)
-  } = req.body;
+// const updateProduct = async (req, res) => {
+//   console.log("body", req.body);
+//   console.log("file", req.file);
 
+//   const productId = req.params.id;
+//   const { brand, imagesToDelete, ...updateFields } = req.body;
+
+//   try {
+//     if (!productId) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Product ID Missing" });
+//     }
+
+//     if (brand) {
+//       const brandData = await Brand.findById(brand);
+//       if (!brandData) {
+//         return res
+//           .status(400)
+//           .json({ success: false, message: "Brand not found for update" });
+//       }
+
+//       updateFields.brand = {
+//         id: brandData._id,
+//         name: brandData.title,
+//       };
+//     }
+
+//     //  --- Handle Image Deletions (Cloudinary & Database) ---
+//     if (imagesToDelete) {
+//       const idsToDelete = imagesToDelete
+//         .split(",")
+//         .map((id) => id.trim())
+//         .filter((id) => id.length > 0);
+
+//       // Delete from Cloudinary and remove from the Mongoose document
+//       for (const imageId of idsToDelete) {
+//         try {
+//           // Call Cloudinary delete API
+//           await cloudinary.uploader.destroy(imageId);
+//           console.log(`Cloudinary deletion successful for: ${imageId}`);
+
+//           await Product.findByIdAndUpdate(productId, {
+//             $pull: { images: { imageId: imageId } },
+//           });
+//         } catch (error) {
+//           console.error(
+//             `Failed to delete image ID ${imageId} from Cloudinary or DB:`,
+//             error
+//           );
+//         }
+//       }
+//     }
+
+//     // Handle New Image Uploads (Cloudinary & Database) ---
+
+//     const newImages = [];
+//     if (req.files && req.files.length > 0) {
+//       for (let i = 0; i < req.files.length; i++) {
+//         const file = req.files[i];
+//         const result = await uploadToCloudinary(file.buffer);
+
+//         const imageObject = {
+//           imageUrl: result.secure_url,
+//           imageId: result.public_id,
+
+//           isCover: false,
+//           // Use a high sort order if needed, or rely on array insertion order
+//         };
+//         newImages.push(imageObject);
+//       }
+
+//       // Push all new images to the product's 'images' array
+//       await Product.findByIdAndUpdate(productId, {
+//         $push: { images: { $each: newImages } },
+//       });
+//     }
+
+//     const product = await Product.findByIdAndUpdate(
+//       productId,
+//       { $set: updateFields },
+//       { new: true, runValidators: true }
+//     );
+
+//     if (!product) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Product not found after update." });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Product and Images Updated Successfully",
+//       product,
+//     });
+//   } catch (error) {
+//     console.error("Error during product update:", error);
+//     res
+//       .status(500)
+//       .json({ success: false, message: "Server Error: " + error.message });
+//   }
+// };
+
+const updateProduct = async (req, res) => {
   try {
+    const productId = req.params.id;
     if (!productId) {
       return res
         .status(400)
-        .json({ success: false, message: "Product ID Missing" });
+        .json({ success: false, message: "Product ID missing" });
     }
 
+    let {
+      title,
+      subTitle,
+      description,
+      basePrice,
+      brand,
+      category,
+      subCategory,
+      size,
+      color,
+      imagesToDelete,
+      status,
+      isVisible,
+    } = req.body;
+
+    // Prepare update object
+    const updateData = {};
+
+    // ---------- BASIC FIELDS ----------
+    if (title) updateData.title = title;
+    if (subTitle) updateData.subTitle = subTitle;
+    if (description) updateData.description = description;
+    if (basePrice) updateData.basePrice = basePrice;
+    if (status) updateData.status = status;
+    if (typeof isVisible !== "undefined") updateData.isVisible = isVisible;
+
+    // ---------- BRAND ----------
     if (brand) {
       const brandData = await Brand.findById(brand);
-      if (!brandData) {
+      if (!brandData)
         return res
           .status(400)
-          .json({ success: false, message: "Brand not found for update" });
-      }
-      // Update the brand structure within the updateFields object
-      updateFields.brand = {
-        id: brandData._id,
-        name: brandData.title,
-      };
+          .json({ success: false, message: "Brand not found" });
+      updateData.brand = { id: brandData._id, name: brandData.title };
     }
 
-    // 2. --- Handle Image Deletions (Cloudinary & Database) ---
+    // ---------- CATEGORY ----------
+    if (category) {
+      const catData = await Category.findById(category);
+      if (!catData)
+        return res
+          .status(400)
+          .json({ success: false, message: "Category not found" });
+      updateData.category = { id: catData._id, name: catData.title };
+    }
 
+    // ---------- SUB CATEGORY ----------
+    if (subCategory) {
+      const subCatData = await SubCategory.findById(subCategory);
+      if (!subCatData)
+        return res
+          .status(400)
+          .json({ success: false, message: "Subcategory not found" });
+      updateData.subCategory = { id: subCatData._id, name: subCatData.title };
+    }
+
+    // ---------- SIZE ----------
+    if (size) {
+      const sizeArr = Array.isArray(size) ? size : size.split(",");
+      const sizeData = await Size.find({ _id: { $in: sizeArr } });
+      if (sizeData.length !== sizeArr.length)
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid sizes provided" });
+      updateData.size = sizeData.map((s) => ({ id: s._id }));
+    }
+
+    // ---------- COLOR ----------
+    if (color) {
+      const colorArr = Array.isArray(color) ? color : color.split(",");
+      const colorData = await Color.find({ _id: { $in: colorArr } });
+      if (colorData.length !== colorArr.length)
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid colors provided" });
+      updateData.color = colorData.map((c) => ({ id: c._id }));
+    }
+
+    // ---------- DELETE IMAGES ----------
     if (imagesToDelete) {
-      const idsToDelete = imagesToDelete
-        .split(",")
-        .map((id) => id.trim())
-        .filter((id) => id.length > 0);
-
-      // Delete from Cloudinary and remove from the Mongoose document
-      for (const imageId of idsToDelete) {
-        try {
-          // Call Cloudinary delete API
-          await cloudinary.uploader.destroy(imageId);
-          console.log(`Cloudinary deletion successful for: ${imageId}`);
-
-          // Use $pull to remove the object matching imageId from the 'images' array
-          await Product.findByIdAndUpdate(productId, {
-            $pull: { images: { imageId: imageId } },
-          });
-        } catch (error) {
-          // Log error but continue execution for other deletions/updates
-          console.error(
-            `Failed to delete image ID ${imageId} from Cloudinary or DB:`,
-            error
-          );
-        }
+      const ids = imagesToDelete.split(",");
+      for (let publicId of ids) {
+        await cloudinary.uploader.destroy(publicId);
+        await Product.findByIdAndUpdate(productId, {
+          $pull: { images: { imageId: publicId } },
+        });
       }
     }
 
-    // 3. --- Handle New Image Uploads (Cloudinary & Database) ---
-
-    const newImages = [];
+    // ---------- ADD NEW IMAGES ----------
     if (req.files && req.files.length > 0) {
-      for (let i = 0; i < req.files.length; i++) {
-        const file = req.files[i];
+      const uploadedImages = [];
+      for (const file of req.files) {
         const result = await uploadToCloudinary(file.buffer);
-
-        // Create the new image object
-        const imageObject = {
+        uploadedImages.push({
           imageUrl: result.secure_url,
           imageId: result.public_id,
-          // New images are typically not designated as cover unless explicitly told,
-          // or you run additional logic to set the first new image as cover
-          isCover: false,
-          // Use a high sort order if needed, or rely on array insertion order
-        };
-        newImages.push(imageObject);
+          isCover: false, // default, can later let admin set cover
+        });
       }
-
-      // Push all new images to the product's 'images' array
-      await Product.findByIdAndUpdate(productId, {
-        $push: { images: { $each: newImages } },
-      });
+      if (!updateData.$push) updateData.$push = {};
+      updateData.$push.images = { $each: uploadedImages };
     }
 
-    // 4. --- Update General Product Fields ---
+    // ---------- UPDATE PRODUCT ----------
+    let product = await Product.findByIdAndUpdate(productId, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
-    // Use $set operator to update only the fields present in updateFields
-    const product = await Product.findByIdAndUpdate(
-      productId,
-      { $set: updateFields },
-      { new: true, runValidators: true } // Return new document, run schema validators
-    );
-
-    if (!product) {
+    if (!product)
       return res
         .status(404)
-        .json({ success: false, message: "Product not found after update." });
+        .json({ success: false, message: "Product not found" });
+
+    // ---------- REGENERATE VARIANTS ----------
+    // If size or color changed, regenerate variants
+    if ((size && size.length > 0) || (color && color.length > 0)) {
+      await generateProductVariants(product);
+      product = await Product.findById(productId); // get updated variants
+    }
+
+    // ---------- HANDLE COVER IMAGE ----------
+    // If product has no cover image, automatically assign the first image as cover
+    if (product.images && product.images.length > 0) {
+      const hasCover = product.images.some((img) => img.isCover);
+      if (!hasCover) {
+        product.images[0].isCover = true;
+        await product.save();
+      }
     }
 
     return res.status(200).json({
       success: true,
-      message: "Product and Images Updated Successfully",
+      message: "Product updated successfully",
       product,
     });
-  } catch (error) {
-    console.error("Error during product update:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server Error: " + error.message });
+  } catch (err) {
+    console.error("Update error:", err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -385,6 +535,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete Product
+const softDeleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Product Deleted",
+      product,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getProductData,
   getProductById,
@@ -392,4 +570,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   bulkDelete,
+  softDeleteProduct,
 };

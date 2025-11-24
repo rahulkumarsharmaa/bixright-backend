@@ -1,5 +1,5 @@
 const express = require('express')
-const { getPurchaseData, getPurchaseById, addPurchase, updatePurchase, deletePurchase, bulkDelete } = require('../../controller/adminController/purchaseController')
+const { getPurchaseData, getPurchaseById, addPurchase, updatePurchase, deletePurchase, bulkDelete, softDeletePurchase } = require('../../controller/adminController/purchaseController')
 const router = express.Router()
 
 router.get('/purchase-data', getPurchaseData)
@@ -7,6 +7,7 @@ router.get('/:id', getPurchaseById)
 router.post('/add-purchase', addPurchase)
 router.put('/update-purchase/:id', updatePurchase )
 router.delete('/delete-purchase/:id', deletePurchase)
+router.delete('/soft-delete-purchase/:id', softDeletePurchase)
 router.delete('/bulk-delete', bulkDelete)
 
 module.exports = router

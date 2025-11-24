@@ -41,7 +41,7 @@ const getColorById = async (req, res) => {
 
 const addColor = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log(req.body);
     const { title, status } = req.body;
 
     if (!title) {
@@ -51,19 +51,18 @@ const addColor = async (req, res) => {
       });
     }
 
-    const lowerTitle = title.toLowerCase()
+    const lowerTitle = title.toLowerCase();
 
-    const existing = await Color.findOne({title : lowerTitle})
-    if(existing){
-       return res.status(400).json({
+    const existing = await Color.findOne({ title: lowerTitle });
+    if (existing) {
+      return res.status(400).json({
         success: false,
         message: "Color Already Exist !",
       });
-
     }
 
     const color = new Color({
-      title : lowerTitle,
+      title: lowerTitle,
       status,
     });
 
@@ -159,6 +158,35 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete Product
+const softDeleteColor = async (req, res) => {
+  try {
+    const color = await Color.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!color) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Color not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Color Deleted",
+      color,
+
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getColorData,
   getColorById,
@@ -166,4 +194,5 @@ module.exports = {
   updateColor,
   deleteColor,
   bulkDelete,
+  softDeleteColor
 };

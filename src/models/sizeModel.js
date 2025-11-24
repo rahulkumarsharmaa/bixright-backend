@@ -23,6 +23,15 @@ const sizeSchema = new mongoose.Schema(
       type: String,
     },
 
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
     status: {
       type: String,
       enum: ["Active", "InActive"],

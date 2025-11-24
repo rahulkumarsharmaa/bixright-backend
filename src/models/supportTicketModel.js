@@ -9,16 +9,25 @@ const supportTicketSchema = new mongoose.Schema(
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref : 'User',
+      ref: "User",
       required: true,
     },
     issue: {
       type: String,
     },
-    status : {
-        type : String,
-        enum : ['Pending', 'InProgress', 'Resolved'],
-        default : 'Pending'
+    status: {
+      type: String,
+      enum: ["Pending", "InProgress", "Resolved"],
+      default: "Pending",
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true, versionKey: false }

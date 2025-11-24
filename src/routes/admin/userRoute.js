@@ -7,4 +7,5 @@ router.get('/', getAllUsers )
 router.post('/create-user', createUser)
 router.put('/update-user/:id', updateUser )
 
+
 module.exports = router

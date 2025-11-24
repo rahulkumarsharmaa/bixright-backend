@@ -39,7 +39,7 @@ const productSchema = new mongoose.Schema(
     size: [
       {
         _id: false,
-        
+
         id: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Size",
@@ -66,6 +66,15 @@ const productSchema = new mongoose.Schema(
       type: String,
       enum: ["active", "inactive"],
       default: "active",
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
 
     // isVisible: {

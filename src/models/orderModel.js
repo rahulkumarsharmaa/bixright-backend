@@ -85,6 +85,15 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
     },
 
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
     // 💰 Financial Summary (auto-calculated)
     subTotal: { type: Number, required: true, default: 0 },
     taxAmount: { type: Number, default: 0 },

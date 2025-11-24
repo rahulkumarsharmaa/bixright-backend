@@ -62,7 +62,7 @@ const addSupplier = async (req, res) => {
       remark,
     } = req.body;
 
-    if (!firstName || !phone || !email ) {
+    if (!firstName || !phone || !email) {
       return res.status(400).json({
         success: false,
         message: "Details Missing !",
@@ -194,6 +194,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteSupplier = async (req, res) => {
+  try {
+    const supplier = await Supplier.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!supplier) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Supplier not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Supplier Deleted",
+      supplier,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getSupplierData,
   getSupplierById,
@@ -201,4 +229,5 @@ module.exports = {
   updateSupplier,
   deleteSupplier,
   bulkDelete,
+  softDeleteSupplier,
 };

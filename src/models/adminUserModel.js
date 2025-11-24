@@ -22,7 +22,16 @@ const adminUserSchema = new mongoose.Schema(
       default: "customer",
     },
 
-    location : {
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
+    location: {
       ip: String,
       city: String,
       region: String,
@@ -33,7 +42,6 @@ const adminUserSchema = new mongoose.Schema(
         default: Date.now,
       },
     },
-
   },
   { timestamps: true, versionKey: false }
 );

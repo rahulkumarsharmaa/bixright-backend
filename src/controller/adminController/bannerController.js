@@ -174,6 +174,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete 
+const softDeleteBanner = async (req, res) => {
+  try {
+    const banner = await Banner.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!banner) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Banner not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Banner Deleted",
+      banner,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getBannerData,
   getBannerById,
@@ -181,4 +209,5 @@ module.exports = {
   updateBanner,
   deleteBanner,
   bulkDelete,
+  softDeleteBanner
 };
