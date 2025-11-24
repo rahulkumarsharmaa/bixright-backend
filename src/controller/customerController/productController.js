@@ -10,14 +10,21 @@ exports.getActiveProducts = async (req, res) => {
       categoryId,
       subCategoryId,
       brandId,
+      sizeId,
+      colorId,
+      minPrice,
+      maxPrice,
     } = req.query;
 
     page = Number(page);
     limit = Number(limit);
 
     // Base filter
-    // const filter = { status: "active" };
-    const filter = {};
+
+    const filter = {
+      status: "active",
+      isDeleted: false,
+    };
 
     // Filter by categoryId
     if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
@@ -32,6 +39,20 @@ exports.getActiveProducts = async (req, res) => {
     // Filter by brandId
     if (brandId && mongoose.Types.ObjectId.isValid(brandId)) {
       filter["brand.id"] = brandId;
+    }
+
+    if (sizeId && mongoose.Types.ObjectId.isValid(sizeId)) {
+      filter["size.id"] = sizeId;
+    }
+
+    if (colorId && mongoose.Types.ObjectId.isValid(colorId)) {
+      filter["color.id"] = colorId;
+    }
+
+    if (minPrice || maxPrice) {
+      filter.basePrice = {};
+      if (minPrice) filter.basePrice.$gte = Number(minPrice);
+      if (maxPrice) filter.basePrice.$lte = Number(maxPrice);
     }
 
     let products = [];
@@ -64,7 +85,7 @@ exports.getActiveProducts = async (req, res) => {
     //  Flatten structure for frontend
     const formattedProducts = products.map((item) => {
       const coverImage = item.images?.find((image) => image.isCover);
-      
+
       return {
         _id: item._id,
         title: item.title,
@@ -111,9 +132,7 @@ exports.getProductById = async (req, res) => {
     }
 
     //  Fetch product
-    const product = await ProductModel.findById(id).select(
-      "title subTitle description basePrice discount category.id category.name subCategory.id subCategory.name size.id size.name brand.id brand.name images createdAt updatedAt"
-    );
+    const product = await ProductModel.findById(id);
 
     if (!product) {
       return res.status(404).json({
@@ -140,6 +159,7 @@ exports.getProductById = async (req, res) => {
       subCategoryName: product.subCategory?.name || null,
       brandId: product.brand?.id || null,
       brandName: product.brand?.name || null,
+      images: product.images || [],
       variants,
     };
 
@@ -150,6 +170,105 @@ exports.getProductById = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching product by ID:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.fetchfilter = async (req, res) => {
+  try {
+    let { categoryId, subCategoryId } = req.query;
+
+    const filter = {
+      status: "active",
+      isDeleted: false,
+    };
+
+    // Filter by categoryId
+    if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
+      filter["category.id"] = categoryId;
+    }
+
+    // Filter by subCategoryId
+    if (subCategoryId && mongoose.Types.ObjectId.isValid(subCategoryId)) {
+      filter["subCategory.id"] = subCategoryId;
+    }
+
+    // Fetch all products
+    const products = await ProductModel.find(filter)
+      .populate("size.id", "title") // Populate nested id
+      .populate("color.id", "title");
+    // .populate("brand.id", "title");
+
+    // --- Extract unique sizes ---
+    const sizeMap = new Map();
+    products.forEach((product) => {
+      product.size.forEach((s) => {
+        if (s.id?._id) {
+          sizeMap.set(s.id._id.toString(), {
+            id: s.id._id,
+            name: s.id.title,
+          });
+        }
+      });
+    });
+
+    // --- Extract unique colors ---
+    const colorMap = new Map();
+    products.forEach((product) => {
+      product.color.forEach((c) => {
+        if (c.id?._id) {
+          colorMap.set(c.id._id.toString(), {
+            id: c.id._id,
+            name: c.id.title,
+          });
+        }
+      });
+    });
+
+    // --- Extract unique brands ---
+    const brandMap = new Map();
+    products.forEach((product) => {
+      // Case 1: brand is populated (brand.id is an object with _id and name)
+      // if (product.brand?.id?._id) {
+      //   brandMap.set(product.brand.id._id.toString(), {
+      //     id: product.brand.id._id,
+      //     title: product.brand.id.title,
+      //   });
+      // }
+
+      // Case 2: brand is stored directly as { id, name } (not populated)
+      if (product.brand?.id && product.brand?.name) {
+        brandMap.set(product.brand.id.toString(), {
+          id: product.brand.id,
+          name: product.brand.name,
+        });
+      }
+    });
+
+    // --- Calculate min and max price ---
+    const prices = products.map((p) => p.basePrice);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    // --- Final Response ---
+    const result = {
+      size: Array.from(sizeMap.values()),
+      color: Array.from(colorMap.values()),
+      brand: Array.from(brandMap.values()),
+      price: { min: minPrice, max: maxPrice },
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: "Filter data fetched successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error);
     res.status(500).json({
       success: false,
       message: "Internal Server Error",
