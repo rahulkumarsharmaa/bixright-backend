@@ -1,6 +1,6 @@
 const Brand = require("../../models/brandModel");
 const Product = require("../../models/productModel");
-const Order = require("../../models/ordermodel");
+const Order = require("../../models/orderModel");
 const Supplier = require("../../models/suppliermodel");
 const Customer = require("../../models/customerModel");
 

@@ -57,5 +57,6 @@ router.use("/tag", tagRoute);
 router.use("/unit", unitsRoute);
 router.use("/variant", variantRoute);
 router.use("/user", userRoute);
+router.use("/pincodes", require("./pincodeRoute"));
 
 module.exports = router
