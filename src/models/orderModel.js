@@ -33,11 +33,11 @@ const orderSchema = new mongoose.Schema(
           ref: "Product",
           required: true,
         },
-         variantId: {
+        variantId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Variant",
           required: true,
-        },       
+        },
         quantity: { type: Number, required: true, min: 1 },
         discount: { type: Number, default: 0 },
         total: { type: Number },
@@ -65,7 +65,7 @@ const orderSchema = new mongoose.Schema(
     //  Payment Info
     paymentMethod: {
       type: String,
-      enum: ["cash", "credit-card", "upi", "bank-transfer"],
+      enum: ["cash", "cod", "credit-card", "upi", "bank-transfer"],
       default: "cash",
     },
 
@@ -104,7 +104,7 @@ const orderSchema = new mongoose.Schema(
     shippingCharge: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true, default: 0 },
 
-    // 🔗 Misc
+    //  Misc
     transactionId: { type: String },
     remark: { type: String },
   },

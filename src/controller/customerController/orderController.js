@@ -2,6 +2,7 @@ const orderModel = require("../../models/orderModel");
 const variantModel = require("../../models/variantModel");
 const transactionModel = require("../../models/transactionModel");
 const couponModel = require("../../models/couponModel");
+const mongoose = require("mongoose");
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -153,6 +154,251 @@ exports.getAvailableCoupons = async (req, res) => {
       success: false,
       message: "Server error while fetching coupons.",
       error: error.message,
+    });
+  }
+};
+
+exports.fetchOrders = async (req, res) => {
+  try {
+    const customerId = req.user.id;
+
+    const { status } = req.query;
+
+    // Validate Customer ID
+    if (!customerId || !mongoose.Types.ObjectId.isValid(customerId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid customerId is required",
+      });
+    }
+
+    const matchStage = {
+      customer: new mongoose.Types.ObjectId(customerId),
+      isDeleted: false,
+    };
+
+    if (status) {
+      matchStage.orderStatus = status;
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+
+      //  Unwind products array to lookup each product/variant
+      { $unwind: "$product" },
+
+      // Join Product info
+      {
+        $lookup: {
+          from: "products",
+          localField: "product.productId",
+          foreignField: "_id",
+          as: "product.productDetails",
+        },
+      },
+      { $unwind: "$product.productDetails" },
+
+      //  Join Variant info
+      {
+        $lookup: {
+          from: "variants",
+          localField: "product.variantId",
+          foreignField: "_id",
+          as: "product.variantDetails",
+        },
+      },
+      { $unwind: "$product.variantDetails" },
+
+      //  Re-group products back to array
+      {
+        $group: {
+          _id: "$_id",
+          orderId: { $first: "$orderId" },
+          customer: { $first: "$customer" },
+          paymentMethod: { $first: "$paymentMethod" },
+          paymentStatus: { $first: "$paymentStatus" },
+          orderStatus: { $first: "$orderStatus" },
+          subTotal: { $first: "$subTotal" },
+          taxAmount: { $first: "$taxAmount" },
+          shippingCharge: { $first: "$shippingCharge" },
+          totalAmount: { $first: "$totalAmount" },
+          remark: { $first: "$remark" },
+          createdAt: { $first: "$createdAt" },
+          products: {
+            $push: {
+              productId: "$product.productId",
+              variantId: "$product.variantId",
+              quantity: "$product.quantity",
+              discount: "$product.discount",
+              total: "$product.total",
+              title: "$product.productDetails.title",
+              subTitle: "$product.productDetails.subTitle",
+              size: "$product.variantDetails.size",
+              color: "$product.variantDetails.color",
+              image: "$product.variantDetails.image",
+            },
+          },
+        },
+      },
+
+      //  Sort by newest first
+      { $sort: { createdAt: -1 } },
+    ];
+
+    const orders = await orderModel.aggregate(pipeline);
+
+    if (!orders.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No orders found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: orders.length,
+      orders,
+    });
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching orders",
+      error: err.message,
+    });
+  }
+};
+
+exports.getOrderById = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID is required",
+      });
+    }
+
+    // --- Match stage for aggregation ---
+    const matchStage = {
+      _id: new mongoose.Types.ObjectId(orderId),
+      isDeleted: false,
+    };
+
+    // --- Aggregation Pipeline ---
+    const pipeline = [
+      { $match: matchStage },
+
+      //  Join customer info
+      {
+        $lookup: {
+          from: "customers",
+          localField: "customer",
+          foreignField: "_id",
+          as: "customer",
+        },
+      },
+      { $unwind: "$customer" },
+
+      //  Unwind products
+      { $unwind: "$product" },
+
+      // Lookup product details
+      {
+        $lookup: {
+          from: "products",
+          localField: "product.productId",
+          foreignField: "_id",
+          as: "product.productDetails",
+        },
+      },
+      { $unwind: "$product.productDetails" },
+
+      //  Lookup variant details
+      {
+        $lookup: {
+          from: "variants",
+          localField: "product.variantId",
+          foreignField: "_id",
+          as: "product.variantDetails",
+        },
+      },
+      { $unwind: "$product.variantDetails" },
+
+      //  Group back to order level
+      {
+        $group: {
+          _id: "$_id",
+          orderId: { $first: "$orderId" },
+          customer: { $first: "$customer" },
+          billingAddress: { $first: "$billingAddress" },
+          shippingAddress: { $first: "$shippingAddress" },
+          paymentMethod: { $first: "$paymentMethod" },
+          paymentStatus: { $first: "$paymentStatus" },
+          orderStatus: { $first: "$orderStatus" },
+          subTotal: { $first: "$subTotal" },
+          taxAmount: { $first: "$taxAmount" },
+          shippingCharge: { $first: "$shippingCharge" },
+          totalAmount: { $first: "$totalAmount" },
+          remark: { $first: "$remark" },
+          product: {
+            $push: {
+              productId: "$product.productId",
+              variantId: "$product.variantId",
+              quantity: "$product.quantity",
+              discount: "$product.discount",
+              total: "$product.total",
+              productDetails: "$product.productDetails",
+              variantDetails: "$product.variantDetails",
+            },
+          },
+        },
+      },
+
+      //  Optional: reshape or limit fields
+      // {
+      //   $project: {
+      //     _id: 1,
+      //     orderId: 1,
+      //     orderStatus: 1,
+      //     paymentMethod: 1,
+      //     paymentStatus: 1,
+      //     subTotal: 1,
+      //     taxAmount: 1,
+      //     shippingCharge: 1,
+      //     totalAmount: 1,
+      //     remark: 1,
+      //     createdAt: 1,
+      //     "customer.firstName": 1,
+      //     "customer.lastName": 1,
+      //     "customer.phone": 1,
+      //     product: 1,
+      //     billingAddress: 1,
+      //     shippingAddress: 1,
+      //   },
+      // },
+    ];
+
+    const result = await orderModel.aggregate(pipeline);
+
+    if (!result || result.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      order: result[0],
+    });
+  } catch (err) {
+    console.error("Error fetching order:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching order details",
+      error: err.message,
     });
   }
 };
