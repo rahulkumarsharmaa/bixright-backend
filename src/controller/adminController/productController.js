@@ -63,9 +63,164 @@ const getProductById = async (req, res) => {
   }
 };
 
+// const addProduct = async (req, res) => {
+//   console.log("body", req.body);
+//   console.log("file", req.file);
+//   try {
+//     const {
+//       title,
+//       subTitle,
+//       description,
+//       brand,
+//       category,
+//       subCategory,
+//       size,
+//       color,
+//       basePrice,
+//     } = req.body;
+
+//     console.log(req.body);
+
+//     if (
+//       !title ||
+//       !description ||
+//       !basePrice ||
+//       !category ||
+//       !size ||
+//       !color ||
+//       !brand
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           "Details Missing: Please provide title, description, price, quantity, category, size, and brand.",
+//       });
+//     }
+
+//     const productImages = [];
+
+//     const uploadToCloudinary = (fileBuffer) => {
+//       return new Promise((resolve, reject) => {
+//         const stream = cloudinary.uploader.upload_stream(
+//           { folder: "products" },
+//           (error, result) => {
+//             if (error) return reject(error);
+//             resolve(result);
+//           }
+//         );
+//         stream.end(fileBuffer);
+//       });
+//     };
+
+//     if (req.files && req.files.length > 0) {
+//       for (let i = 0; i < req.files.length; i++) {
+//         const file = req.files[i];
+
+//         const result = await uploadToCloudinary(file.buffer);
+//         const imageObject = {
+//           imageUrl: result.secure_url,
+//           imageId: result.public_id,
+//           // Set the first image in the array as the cover image
+//           isCover: i === 0,
+//         };
+
+//         // Add the structured image object to the array
+//         productImages.push(imageObject);
+//       }
+//     } else {
+//       console.log("No images provided for the product.");
+//     }
+
+//     const brandData = await Brand.findById(brand);
+
+//     if (!brandData) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Brand not found" });
+//     }
+
+//     const categoryData = await Category.findById(category);
+
+//     if (!categoryData) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Category not found" });
+//     }
+
+//     const subCategoryData = await SubCategory.findById(subCategory);
+
+//     if (!subCategoryData) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Sub Category not found" });
+//     }
+
+//     const sizeData = await Size.find({ _id: { $in: size } });
+//     if (sizeData.length !== size.length) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "One or more sizes are invalid" });
+//     }
+
+//     // Check colors
+//     const colorData = await Color.find({ _id: { $in: color } });
+//     if (colorData.length !== color.length) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "One or more colors are invalid" });
+//     }
+
+//     console.log(sizeData);
+//     console.log(colorData);
+
+//     const sizesToSave = sizeData.map((s) => ({ id: s._id }));
+//     const colorsToSave = colorData.map((c) => ({ id: c._id }));
+
+//     console.log(sizesToSave);
+//     console.log(colorsToSave);
+
+//     const product = new Product({
+//       title,
+//       subTitle,
+//       description,
+//       basePrice,
+//       brand: {
+//         id: brandData?._id,
+//         name: brandData?.title,
+//       },
+//       category: {
+//         id: categoryData?._id,
+//         name: categoryData?.title,
+//       },
+//       subCategory: {
+//         id: subCategoryData?._id,
+//         name: subCategoryData?.title,
+//       },
+//       size: sizesToSave,
+//       color: colorsToSave,
+//       images: productImages,
+//     });
+
+//     await generateProductVariants(product);
+
+//     await product.save();
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Product Created Successfully!",
+//       product: product,
+//     });
+//   } catch (error) {
+//     console.error("Error creating product:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server Error: Could not create product.",
+//     });
+//   }
+// };
+
 const addProduct = async (req, res) => {
-  console.log("body", req.body);
-  console.log("file", req.file);
   try {
     const {
       title,
@@ -79,26 +234,40 @@ const addProduct = async (req, res) => {
       basePrice,
     } = req.body;
 
-    console.log(req.body);
-
-    if (
-      !title ||
-      !description ||
-      !basePrice ||
-      !category ||
-      !size ||
-      !color ||
-      !brand
-    ) {
+    // Validate required fields
+    if (!title || !description || !basePrice || !category || !size || !color || !brand) {
       return res.status(400).json({
         success: false,
-        message:
-          "Details Missing: Please provide title, description, price, quantity, category, size, and brand.",
+        message: "Details Missing: Please provide title, description, price, category, size, color, and brand.",
       });
     }
 
-    const productImages = [];
+    // Normalize size and color to arrays
+    const sizeArr = Array.isArray(size) ? size : [size].filter(Boolean);
+    const colorArr = Array.isArray(color) ? color : [color].filter(Boolean);
 
+    // Fetch and validate brand, category, subcategory
+    const brandData = await Brand.findById(brand);
+    if (!brandData) return res.status(400).json({ success: false, message: "Brand not found" });
+
+    const categoryData = await Category.findById(category);
+    if (!categoryData) return res.status(400).json({ success: false, message: "Category not found" });
+
+    const subCategoryData = await SubCategory.findById(subCategory);
+    if (!subCategoryData) return res.status(400).json({ success: false, message: "Sub Category not found" });
+
+    // Validate sizes
+    const sizeData = await Size.find({ _id: { $in: sizeArr } });
+    if (sizeData.length !== sizeArr.length)
+      return res.status(400).json({ success: false, message: "One or more sizes are invalid" });
+
+    // Validate colors
+    const colorData = await Color.find({ _id: { $in: colorArr } });
+    if (colorData.length !== colorArr.length)
+      return res.status(400).json({ success: false, message: "One or more colors are invalid" });
+
+    // Handle image uploads
+    const productImages = [];
     const uploadToCloudinary = (fileBuffer) => {
       return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
@@ -115,110 +284,49 @@ const addProduct = async (req, res) => {
     if (req.files && req.files.length > 0) {
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
-
         const result = await uploadToCloudinary(file.buffer);
-        const imageObject = {
+        productImages.push({
           imageUrl: result.secure_url,
           imageId: result.public_id,
-          // Set the first image in the array as the cover image
           isCover: i === 0,
-        };
-
-        // Add the structured image object to the array
-        productImages.push(imageObject);
+        });
       }
-    } else {
-      console.log("No images provided for the product.");
     }
 
-    const brandData = await Brand.findById(brand);
-
-    if (!brandData) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Brand not found" });
-    }
-
-    const categoryData = await Category.findById(category);
-
-    if (!categoryData) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Category not found" });
-    }
-
-    const subCategoryData = await SubCategory.findById(subCategory);
-
-    if (!subCategoryData) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Sub Category not found" });
-    }
-
-    const sizeData = await Size.find({ _id: { $in: size } });
-    if (sizeData.length !== size.length) {
-      return res
-        .status(400)
-        .json({ success: false, message: "One or more sizes are invalid" });
-    }
-
-    // Check colors
-    const colorData = await Color.find({ _id: { $in: color } });
-    if (colorData.length !== color.length) {
-      return res
-        .status(400)
-        .json({ success: false, message: "One or more colors are invalid" });
-    }
-
-    console.log(sizeData);
-    console.log(colorData);
-
-    const sizesToSave = sizeData.map((s) => ({ id: s._id }));
-    const colorsToSave = colorData.map((c) => ({ id: c._id }));
-
-    console.log(sizesToSave);
-    console.log(colorsToSave);
-
+    // Prepare product document
     const product = new Product({
       title,
       subTitle,
       description,
       basePrice,
-      brand: {
-        id: brandData?._id,
-        name: brandData?.title,
-      },
-      category: {
-        id: categoryData?._id,
-        name: categoryData?.title,
-      },
-      subCategory: {
-        id: subCategoryData?._id,
-        name: subCategoryData?.title,
-      },
-      size: sizesToSave,
-      color: colorsToSave,
+      brand: { id: brandData._id, name: brandData.title },
+      category: { id: categoryData._id, name: categoryData.title },
+      subCategory: { id: subCategoryData._id, name: subCategoryData.title },
+      size: sizeData.map((s) => ({ id: s._id })),
+      color: colorData.map((c) => ({ id: c._id })),
       images: productImages,
     });
 
+    // Generate product variants
     await generateProductVariants(product);
 
+    // Save product
     await product.save();
 
     return res.status(200).json({
       success: true,
       message: "Product Created Successfully!",
-      product: product,
+      product,
     });
   } catch (error) {
     console.error("Error creating product:", error);
-
     return res.status(500).json({
       success: false,
       message: "Server Error: Could not create product.",
     });
   }
 };
+
 
 const uploadToCloudinary = (fileBuffer) => {
   return new Promise((resolve, reject) => {

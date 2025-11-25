@@ -43,7 +43,7 @@ const variantSchema = new mongoose.Schema({
 
   image: {
     type: String,
-    default: null,
+    default : null
   },
 
   status: {
@@ -56,10 +56,10 @@ const variantSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  deletedAt: {
-    type: Date,
-    default: null,
-  },
+  // deletedAt: {
+  //   type: Date,
+  //   default: null,
+  // },
 });
 
 variantSchema.pre("validate", function (next) {

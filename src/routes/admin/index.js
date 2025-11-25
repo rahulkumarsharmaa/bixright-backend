@@ -56,6 +56,6 @@ router.use("/support", supportTicketRoute);
 router.use("/tag", tagRoute);
 router.use("/unit", unitsRoute);
 router.use("/variant", variantRoute);
-router.use("/users", userRoute);
+router.use("/user", userRoute);
 
 module.exports = router

@@ -4,8 +4,6 @@ const Product = require("../../models/productModel");
 const Size = require("../../models/sizeModel");
 const Variant = require("../../models/variantModel");
 
-
-
 const getVariantData = async (req, res) => {
   try {
     const { id } = req.params;
@@ -121,6 +119,7 @@ const addVariant = async (req, res) => {
 
 const updateVariant = async (req, res) => {
   try {
+    console.log(req.body);
     const variantId = req.params.id;
     const data = req.body;
     const file = req.file;
@@ -159,12 +158,9 @@ const updateVariant = async (req, res) => {
         stream.end(file.buffer); // upload buffer
       });
 
-      imageUrl = uploadResult.secure_url;
+      variant.image = uploadResult.secure_url;
+      await variant.save();
     }
-
-    variant.image = imageUrl;
-
-    await variant.save();
 
     return res.status(200).json({
       success: true,
@@ -253,7 +249,6 @@ const softDeleteVariant = async (req, res) => {
 };
 
 module.exports = {
-
   getVariantData,
   getVariantById,
   addVariant,

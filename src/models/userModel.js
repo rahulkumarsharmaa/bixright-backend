@@ -15,7 +15,6 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
     },
 
     phone: {
@@ -23,27 +22,22 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
-    company: {
+    role: {
       type: String,
       required: true,
     },
 
-    package: {
-      type: String,
-      enum: ["Basic", "Medium", "Advance"],
-      default: "Basic",
-    },
+    permissions: [
+      {
+        type: String,
+        default: null,
+      },
+    ],
 
-    userStatus: {
+    status: {
       type: String,
-      enum: ["Active", "InActive"],
-      default: "InActive",
-    },
-
-    serviceStatus: {
-      type: String,
-      enum: ["Active", "InActive"],
-      default: "InActive",
+      enum: ["active", "inactive"],
+      default: "inactive",
     },
 
     isDeleted: {
