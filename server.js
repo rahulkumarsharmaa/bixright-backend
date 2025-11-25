@@ -4,8 +4,10 @@ const cors = require("cors");
 const dbConnection = require("./src/config/dbConfig");
 const authRoute = require("./src/routes/authRoute");
 const adminRoute = require("./src/routes/admin/index.js");
+const { importPincodes } = require("./src/helpers/generateTransactionId.js");
 const app = express();
 dbConnection();
+// importPincodes();
 
 app.use(cors());
 app.use(express.json());
@@ -21,6 +23,6 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT,'0.0.0.0', () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on PORT : ${PORT}`);
 });
