@@ -3,13 +3,13 @@ const mongoose = require("mongoose");
 
 exports.addToWishlist = async (req, res) => {
   try {
-    const { productId, variantId } = req.body;
+    const { productId } = req.body;
     const customerId = req.user.id;
 
-    if (!productId || !variantId) {
+    if (!productId) {
       return res.status(400).json({
         success: false,
-        message: "Product ID and Variant ID are required",
+        message: "Product ID is required",
       });
     }
 
@@ -17,14 +17,13 @@ exports.addToWishlist = async (req, res) => {
     const existing = await wishlistModel.findOne({
       customerId,
       productId,
-      variantId,
     });
 
     //  Item already exists and is active
     if (existing && !existing.isDeleted) {
       return res.status(400).json({
         success: false,
-        message: "This product variant is already in wishlist",
+        message: "This product  is already in wishlist",
       });
     }
 
@@ -44,7 +43,6 @@ exports.addToWishlist = async (req, res) => {
     const newWishlistItem = await wishlistModel.create({
       customerId,
       productId,
-      variantId,
     });
 
     return res.status(200).json({
@@ -82,29 +80,33 @@ exports.getWishlist = async (req, res) => {
       {
         $unwind: "$productData",
       },
-      {
-        $lookup: {
-          from: "variants",
-          localField: "variantId",
-          foreignField: "_id",
-          as: "variantData",
-        },
-      },
-      {
-        $unwind: "$variantData",
-      },
+      // {
+      //   $lookup: {
+      //     from: "variants",
+      //     localField: "variantId",
+      //     foreignField: "_id",
+      //     as: "variantData",
+      //   },
+      // },
+      // {
+      //   $unwind: "$variantData",
+      // },
       {
         $project: {
           _id: 1,
           productId: "$productData._id",
-          variantId: "$variantData._id",
           title: "$productData.title",
-          image: "$variantData.image",
-          price: "$variantData.price",
-          color: "$variantData.color",
-          size: "$variantData.size",
           branndName: "$productData.brand.name",
           subTitle: "$productData.subTitle",
+          basePrice: "$productData.basePrice",
+          image: { $arrayElemAt: ["$productData.images.imageUrl", 0] },
+          categoryName:"$productData.category.name",
+          subCategoryName:"$productData.subCategory.name",
+          // variantId: "$variantData._id",
+          // image: "$variantData.image",
+          // price: "$variantData.price",
+          // color: "$variantData.color",
+          // size: "$variantData.size",
           // "productData.basePrice": 1,
           // "productData.images": 1,
           // "productData.category": 1,
@@ -135,17 +137,17 @@ exports.getWishlist = async (req, res) => {
 
 exports.deleteWishlistItem = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { productId } = req.params;
     const customerId = req.user.id;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid wishlist ID" });
     }
 
     const wishlistItem = await wishlistModel.findOne({
-      _id: id,
+      productId: productId,
       customerId,
       isDeleted: false,
     });
