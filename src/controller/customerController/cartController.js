@@ -176,6 +176,7 @@ exports.updateCart = async (req, res) => {
       else{
         cartItem.quantity += 1;
       }
+      
     } else if (action === "decrease") {
       if (cartItem.quantity > 1) {
         cartItem.quantity -= 1;
