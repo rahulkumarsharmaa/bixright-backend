@@ -1,5 +1,6 @@
 const Category = require("../../models/categoryModel");
-const SubCategory = require("../../models/subcategoryModel");
+const SubCategory = require("../../models/subCategoryModel");
+const cloudinary = require("../../config/cloudinaryConfig");
 
 const getSubCategoryData = async (req, res) => {
   try {
@@ -42,7 +43,14 @@ const getsubCategoryById = async (req, res) => {
 
 const addSubCategory = async (req, res) => {
   try {
-    const { title, parentCategory, status } = req.body;
+    const data = req.body;
+    const file = req.file;
+
+    console.log("data", data);
+    console.log("file", file);
+
+    let imageUrl = null;
+    const { title, parentCategory, description, status } = req.body;
 
     // 🟡 Validate input
     if (!title) {
@@ -82,12 +90,30 @@ const addSubCategory = async (req, res) => {
       });
     }
 
+    if (file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "variants" },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+
+        stream.end(file.buffer); // upload buffer
+      });
+
+      imageUrl = uploadResult.secure_url;
+    }
+
     const subCategory = new SubCategory({
+      image: imageUrl,
       title,
-      parentCategory : {
-        id : parentCategoryExist?._id,
-        name : parentCategoryExist?.title
+      parentCategory: {
+        id: parentCategoryExist?._id,
+        name: parentCategoryExist?.title,
       },
+      description,
       status,
     });
 
@@ -191,6 +217,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteSubCategory = async (req, res) => {
+  try {
+    const subCategory = await SubCategory.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!subCategory) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Sub Category not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Sub Category Deleted",
+      subCategory,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getSubCategoryData,
   getsubCategoryById,
@@ -198,4 +252,5 @@ module.exports = {
   updateSubCategory,
   deleteSubCategory,
   bulkDelete,
+  softDeleteSubCategory,
 };

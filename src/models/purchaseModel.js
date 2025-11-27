@@ -21,7 +21,7 @@ const purchaseSchema = new mongoose.Schema(
 
     purchaseDate: {
       type: Date,
-      required : true,
+      required: true,
       default: Date.now,
     },
     type: {
@@ -59,7 +59,7 @@ const purchaseSchema = new mongoose.Schema(
     },
     transactionId: {
       type: String,
-    //   unique: true,
+      //   unique: true,
     },
     status: {
       type: String,
@@ -68,6 +68,15 @@ const purchaseSchema = new mongoose.Schema(
     },
     remark: {
       type: String,
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true, versionKey: false }

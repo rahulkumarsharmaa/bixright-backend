@@ -4,8 +4,8 @@ const { hashPassword } = require("../../utils/bcrypt");
 
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, phone, company, package } = req.body;
-    if (!name || !email || !password || !phone || !company) {
+    const { name, email, phone, role, status, permissions } = req.body;
+    if (!name || !email || !role || !phone || !permissions) {
       return res
         .status(400)
         .json({ success: false, message: "Details Missing" });
@@ -18,15 +18,15 @@ const createUser = async (req, res) => {
         .json({ success: false, message: "User Already Exist" });
     }
 
-    const hashedPassword = await hashPassword(password);
+    // const hashedPassword = await hashPassword(password);
 
     const user = new User({
       name,
       email,
-      password: hashedPassword,
       phone,
-      company,
-      package: package,
+      role,
+      status,
+      permissions
     });
 
     await user.save();
@@ -38,6 +38,23 @@ const createUser = async (req, res) => {
     res
       .status(error.status || 500)
       .json({ success: false, message: error.message });
+  }
+};
+
+const getUserById = async (req, res) => {
+  const id = req.params;
+  console.log(id);
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "No user Found" });
+    }
+
+    return res.status(200).json({ success: true, message: "User Fetched", user });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json(error.message);
   }
 };
 
@@ -92,4 +109,31 @@ const updateUser = async (req, res) => {
   }
 };
 
-module.exports = { createUser, getAllUsers, updateUser };
+const softDeleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "User Deleted",
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { createUser, getUserById,  getAllUsers, updateUser, softDeleteUser };

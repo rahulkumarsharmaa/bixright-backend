@@ -40,7 +40,7 @@ const getAttributeById = async (req, res) => {
 
 const addAttribute = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log(req.body);
     const { title, status } = req.body;
 
     if (!title) {
@@ -50,15 +50,14 @@ const addAttribute = async (req, res) => {
       });
     }
 
-    const lowerTitle = title.toLowerCase()
+    const lowerTitle = title.toLowerCase();
 
-    const existing = await Attribute.findOne({title : lowerTitle})
-    if(existing){
-       return res.status(400).json({
+    const existing = await Attribute.findOne({ title: lowerTitle });
+    if (existing) {
+      return res.status(400).json({
         success: false,
         message: "Attribute Already Exist !",
       });
-
     }
 
     const attribute = new Attribute({
@@ -158,6 +157,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete 
+const softDeleteAttribute = async (req, res) => {
+  try {
+    const attribute = await Attribute.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!attribute) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Attribute not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Attribute Deleted",
+      attribute,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getAttributeData,
   getAttributeById,
@@ -165,4 +192,5 @@ module.exports = {
   updateAttribute,
   deleteAttribute,
   bulkDelete,
+  softDeleteAttribute,
 };

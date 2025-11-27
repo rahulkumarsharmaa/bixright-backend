@@ -1,10 +1,14 @@
 const Stock = require("../../models/stockModel");
 const Product = require("../../models/productModel");
+const Variant = require("../../models/variantModel");
 
 const getStockData = async (req, res) => {
   try {
-    const stock = await Stock.find().populate("product", "title imageUrl");
-    console.log(stock)
+    const stock = await Stock.find({ isDeleted: false }).populate(
+      "product",
+      "title imageUrl"
+    );
+    console.log(stock);
     if (!stock) {
       return res
         .status(404)
@@ -32,6 +36,12 @@ const getStockById = async (req, res) => {
         .json({ success: false, message: "No stock Found" });
     }
 
+    if (stock.isDeleted === true) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No stock Found" });
+    }
+
     return res
       .status(200)
       .json({ success: true, message: "stock Fetched", stock });
@@ -43,17 +53,23 @@ const getStockById = async (req, res) => {
 
 const addStock = async (req, res) => {
   try {
-    
-    const { product, quantity, reason, note, status } = req.body;
+    console.log("add", req.body);
 
-    if (!product || !quantity) {
+    const { product, productVariant, quantity, reason, note, status } =
+      req.body;
+
+    if (!product || !quantity || !productVariant) {
       return res.status(400).json({
         success: false,
         message: "Details Missing !",
       });
     }
 
-    const productExist = await Product.findById(product);
+    const productExist = await Product.findOne({
+      _id: product,
+      isDeleted: false,
+    });
+
     if (!productExist) {
       return res.status(400).json({
         success: false,
@@ -67,6 +83,26 @@ const addStock = async (req, res) => {
         message: "Quantity must be Positive!",
       });
     }
+
+    const variant = await Variant.findOne({
+      _id: productVariant,
+      isDeleted: false,
+    });
+
+    if (!variant) {
+      return res.status(404).json({
+        success: false,
+        message: "Variant Not Found",
+      });
+    }
+
+    if (status === "in") {
+      variant.quantity += Number(quantity);
+    } else {
+      variant.quantity -= Number(quantity);
+    }
+
+    await variant.save();
 
     const stock = new Stock({
       product,
@@ -92,7 +128,7 @@ const updateStock = async (req, res) => {
   try {
     const stockId = req.params.id;
     const data = req.body;
-    console.log(data);
+    console.log("update", data);
 
     if (!stockId) {
       return res
@@ -168,6 +204,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteStock = async (req, res) => {
+  try {
+    const stock = await Stock.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!stock) {
+      return res
+        .status(404)
+        .json({ success: false, message: "stock not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "stock Deleted",
+      stock,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getStockData,
   getStockById,
@@ -175,4 +239,5 @@ module.exports = {
   updateStock,
   deleteStock,
   bulkDelete,
+  softDeleteStock,
 };

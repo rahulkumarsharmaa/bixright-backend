@@ -21,6 +21,27 @@ const adminUserSchema = new mongoose.Schema(
       enum: ["admin", "manager", "staff", "customer"],
       default: "customer",
     },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
+    location: {
+      ip: String,
+      city: String,
+      region: String,
+      country: String,
+      timezone: String,
+      loginAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
   },
   { timestamps: true, versionKey: false }
 );

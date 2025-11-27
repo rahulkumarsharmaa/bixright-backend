@@ -1,7 +1,7 @@
 const Brand = require("../../models/brandModel");
 const Product = require("../../models/productModel");
-const Purchase = require("../../models/purchasemodel");
-const Supplier = require("../../models/suppliermodel");
+const Purchase = require("../../models/purchaseModel");
+const Supplier = require("../../models/supplierModel");
 
 const getPurchaseData = async (req, res) => {
   try {
@@ -213,6 +213,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeletePurchase = async (req, res) => {
+  try {
+    const purchase = await Purchase.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!purchase) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Purchase not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Purchase Deleted",
+      purchase,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getPurchaseData,
   getPurchaseById,
@@ -220,4 +248,5 @@ module.exports = {
   updatePurchase,
   deletePurchase,
   bulkDelete,
+  softDeletePurchase
 };

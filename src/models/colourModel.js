@@ -7,12 +7,22 @@ const colorSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
+      set: (v) => v.replace(/\s+/g, "-"),
     },
 
     status: {
       type: String,
       enum: ["Active", "InActive"],
       default: "InActive",
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true, versionKey: false }

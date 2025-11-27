@@ -32,12 +32,12 @@ const supplierSchema = new mongoose.Schema(
     },
 
     address: {
-      addressLine1: {type : String},
-      addressLine2: {type : String},
-      country: {type : String},
-      state: {type : String},
-      city: {type : String},
-      postalCode: {type : String},
+      addressLine1: { type: String },
+      addressLine2: { type: String },
+      country: { type: String },
+      state: { type: String },
+      city: { type: String },
+      postalCode: { type: String },
     },
 
     gstNumber: {
@@ -51,10 +51,10 @@ const supplierSchema = new mongoose.Schema(
     },
 
     bankDetails: {
-      accountHolder: {type : String},
-      accountNumber: {type : Number},
-      bankName: {type : String},
-      ifscCode: {type : String},
+      accountHolder: { type: String },
+      accountNumber: { type: Number },
+      bankName: { type: String },
+      ifscCode: { type: String },
     },
 
     status: {
@@ -66,10 +66,20 @@ const supplierSchema = new mongoose.Schema(
     remark: {
       type: String,
     },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true, versionKey: false }
 );
 
-const Supplier = mongoose.models.Supplier || mongoose.model('Supplier', supplierSchema);
+const Supplier =
+  mongoose.models.Supplier || mongoose.model("Supplier", supplierSchema);
 
 module.exports = Supplier;

@@ -14,13 +14,16 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    price: {
+    basePrice: {
       type: Number,
       required: true,
     },
-    discount: {
-      type: Number,
-      default: 0,
+    brand: {
+      id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Brand",
+      },
+      name: { type: String },
     },
     category: {
       id: {
@@ -33,34 +36,50 @@ const productSchema = new mongoose.Schema(
       id: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategory" },
       name: { type: String },
     },
-    size: {
-      id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Size",
+    size: [
+      {
+        _id: false,
+
+        id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Size",
+        },
       },
-      name: { type: String },
-    },
-    brand: {
-      id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Brand",
+    ],
+
+    color: [
+      {
+        _id: false,
+        id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Color",
+        },
       },
-      name: { type: String },
-    },
-    quantity: {
-      type: Number,
-      required: true,
-    },
+    ],
+
+    // quantity: {
+    //   type: Number,
+    //   required: true,
+    // },
 
     status: {
       type: String,
       enum: ["active", "inactive"],
-      default: "inactive",
+      default: "active",
     },
 
-    isVisible: {
+    isDeleted: {
       type: Boolean,
+      default: false,
     },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // isVisible: {
+    //   type: Boolean,
+    // },
 
     images: [
       {

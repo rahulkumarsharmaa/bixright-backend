@@ -1,7 +1,7 @@
 const Brand = require("../../models/brandModel");
 const Product = require("../../models/productModel");
-const Order = require("../../models/ordermodel");
-const Supplier = require("../../models/suppliermodel");
+const Order = require("../../models/orderModel");
+const Supplier = require("../../models/supplierModel");
 const Customer = require("../../models/customerModel");
 
 const getOrderData = async (req, res) => {
@@ -36,7 +36,7 @@ const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(id)
       .populate("product.productId", "imageUrl title price")
-      .populate("customer", "firstName lastName email  address.city phone " );
+      .populate("customer", "firstName lastName email  address.city phone ");
     if (!order) {
       return res
         .status(404)
@@ -241,6 +241,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Order Deleted",
+      order,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getOrderData,
   getOrderById,
@@ -248,4 +276,5 @@ module.exports = {
   updateOrder,
   deleteOrder,
   bulkDelete,
+  softDeleteOrder,
 };

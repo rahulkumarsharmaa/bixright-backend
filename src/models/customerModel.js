@@ -4,25 +4,24 @@ const customerSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
-      required: true,
     },
     lastName: {
       type: String,
     },
     dob: {
       type: Date,
-      required : true,
     },
     gender: {
       type: String,
       enum: ["male", "female", "other"],
-      default: "other",
     },
     phone: {
       type: String,
       unique: [true, "This Number is Already Registered"],
       required: true,
     },
+    otp: { type: String },
+    otpExpiresAt: { type: Date },
     alternatePhone: {
       type: String,
     },
@@ -31,7 +30,6 @@ const customerSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      required: true,
     },
 
     address: {
@@ -100,7 +98,17 @@ const customerSchema = new mongoose.Schema(
     remark: {
       type: String,
     },
-},
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+    
+  },
   { timestamps: true, versionKey: false }
 );
 

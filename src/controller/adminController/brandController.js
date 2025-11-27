@@ -158,6 +158,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete 
+const softDeleteBrand = async (req, res) => {
+  try {
+    const brand = await Brand.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!brand) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Brand not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Brand  Deleted",
+      brand,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getBrandData,
   getBrandById,
@@ -165,4 +193,5 @@ module.exports = {
   updateBrand,
   deleteBrand,
   bulkDelete,
+  softDeleteBrand
 };

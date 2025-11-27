@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const unitScheme = new mongoose.Schema(
   {
-    name : {
+    name: {
       type: String,
       required: true,
       unique: true,
@@ -11,6 +11,15 @@ const unitScheme = new mongoose.Schema(
       type: String,
       enum: ["Active", "InActive"],
       default: "InActive",
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true, versionKey: false }

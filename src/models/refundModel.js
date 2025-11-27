@@ -36,6 +36,15 @@ const refundSchema = new mongoose.Schema(
     transactionId: { type: String },
     remark: { type: String },
     date: { type: Date, default: Date.now },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

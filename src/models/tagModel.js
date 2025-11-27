@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const slugify  = require("slugify");
+const slugify = require("slugify");
 
 const tagSchema = new mongoose.Schema(
   {
@@ -8,13 +8,22 @@ const tagSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
-      lowercase : true
+      lowercase: true,
     },
 
     status: {
       type: String,
       enum: ["Active", "InActive"],
       default: "InActive",
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true, versionKey: false }

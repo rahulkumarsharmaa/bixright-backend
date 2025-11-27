@@ -3,9 +3,7 @@ const getSizeData = async (req, res) => {
   try {
     const size = await Size.find();
     if (!size) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No size Found" });
+      return res.status(404).json({ success: false, message: "No size Found" });
     }
 
     return res
@@ -24,9 +22,7 @@ const getSizeById = async (req, res) => {
   try {
     const size = await Size.findById(id);
     if (!size) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No size Found" });
+      return res.status(404).json({ success: false, message: "No size Found" });
     }
 
     return res
@@ -40,7 +36,7 @@ const getSizeById = async (req, res) => {
 
 const addSize = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log(req.body);
     const { title, code, description, status } = req.body;
 
     if (!title) {
@@ -50,15 +46,14 @@ const addSize = async (req, res) => {
       });
     }
 
-    const lowerTitle = title.toLowerCase()
+    const lowerTitle = title.toLowerCase();
 
-    const existingTitle = await Size.findOne({title : lowerTitle})
-    if(existingTitle){
-       return res.status(400).json({
+    const existingTitle = await Size.findOne({ title: lowerTitle });
+    if (existingTitle) {
+      return res.status(400).json({
         success: false,
         message: "Size Already Exist !",
       });
-
     }
 
     // const lowerCode = code?.toLowerCase()
@@ -170,6 +165,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteSize = async (req, res) => {
+  try {
+    const size = await Customer.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!size) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Size not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Size Deleted",
+      size,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getSizeData,
   getSizeById,
@@ -177,4 +200,5 @@ module.exports = {
   updateSize,
   deleteSize,
   bulkDelete,
+  softDeleteSize,
 };

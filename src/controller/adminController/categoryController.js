@@ -1,4 +1,5 @@
 const Category = require("../../models/categoryModel");
+const cloudinary = require('../../config/cloudinaryConfig')
 const getCategoryData = async (req, res) => {
   try {
     const category = await Category.find();
@@ -40,7 +41,16 @@ const getcategoryById = async (req, res) => {
 
 const addCategory = async (req, res) => {
   try {
-    const { title, description, parentCategory, status } = req.body;
+
+    const data = req.body;
+    const file = req.file;
+
+    console.log("data", data);
+    console.log("file", file);
+
+    let imageUrl = null;
+
+    const { title, description, status } = req.body;
 
     // 🟡 Validate input
     if (!title) {
@@ -64,6 +74,22 @@ const addCategory = async (req, res) => {
       });
     }
 
+    if (file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "variants" },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+
+        stream.end(file.buffer); // upload buffer
+      });
+
+      imageUrl = uploadResult.secure_url;
+    }
+
     // 🟣 Check parent category (if provided)
     // let parentCatData = null;
     // if (parentCategory) {
@@ -78,6 +104,7 @@ const addCategory = async (req, res) => {
 
     // 🔵 Create category (slug auto-generated in model)
     const category = new Category({
+      image : imageUrl,
       title,
       description,
       status,
@@ -185,6 +212,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete Category
+const softDeleteCategory = async (req, res) => {
+  try {
+    const category = await Category.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!category) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Category not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Category Deleted",
+      category,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getCategoryData,
   getcategoryById,
@@ -192,4 +247,5 @@ module.exports = {
   updateCategory,
   deleteCategory,
   bulkDelete,
+  softDeleteCategory
 };

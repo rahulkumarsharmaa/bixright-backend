@@ -4,14 +4,10 @@ const getTagData = async (req, res) => {
   try {
     const tag = await Tag.find();
     if (!tag) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No tag Found" });
+      return res.status(404).json({ success: false, message: "No tag Found" });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "tag Fetched", tag });
+    return res.status(200).json({ success: true, message: "tag Fetched", tag });
   } catch (error) {
     console.log(error);
     return res.status(500).json(error.message);
@@ -25,14 +21,10 @@ const getTagById = async (req, res) => {
   try {
     const tag = await Tag.findById(id);
     if (!tag) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No tag Found" });
+      return res.status(404).json({ success: false, message: "No tag Found" });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "tag Fetched", tag });
+    return res.status(200).json({ success: true, message: "tag Fetched", tag });
   } catch (error) {
     console.log(error);
     return res.status(500).json(error.message);
@@ -41,7 +33,7 @@ const getTagById = async (req, res) => {
 
 const addTag = async (req, res) => {
   try {
-    console.log(req.body)
+    console.log(req.body);
     const { title, status } = req.body;
 
     if (!title) {
@@ -51,15 +43,14 @@ const addTag = async (req, res) => {
       });
     }
 
-    const lowerTitle = title.toLowerCase()
+    const lowerTitle = title.toLowerCase();
 
-    const existing = await Tag.findOne({title : lowerTitle})
-    if(existing){
-       return res.status(400).json({
+    const existing = await Tag.findOne({ title: lowerTitle });
+    if (existing) {
+      return res.status(400).json({
         success: false,
         message: "Tag Already Exist !",
       });
-
     }
 
     const tag = new Tag({
@@ -86,9 +77,7 @@ const updateTag = async (req, res) => {
     console.log(data);
 
     if (!tagId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "tagId Missing" });
+      return res.status(400).json({ success: false, message: "tagId Missing" });
     }
 
     const tag = await Tag.findByIdAndUpdate(tagId, data, {
@@ -96,9 +85,7 @@ const updateTag = async (req, res) => {
     });
 
     if (!tag) {
-      return res
-        .status(404)
-        .json({ success: false, message: "tag not found" });
+      return res.status(404).json({ success: false, message: "tag not found" });
     }
 
     return res.status(200).json({
@@ -117,9 +104,7 @@ const deleteTag = async (req, res) => {
     const tagId = req.params.id;
 
     if (!tagId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "tagId Missing" });
+      return res.status(400).json({ success: false, message: "tagId Missing" });
     }
 
     const check = await Tag.findByIdAndDelete(tagId);
@@ -159,6 +144,34 @@ const bulkDelete = async (req, res) => {
   }
 };
 
+// Soft Delete
+const softDeleteTag = async (req, res) => {
+  try {
+    const tag = await Tag.findByIdAndUpdate(
+      req.params.id,
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!tag) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Tag not found" });
+    }
+
+    res.json({
+      success: true,
+      message: "Tag Deleted",
+      tag,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getTagData,
   getTagById,
@@ -166,4 +179,5 @@ module.exports = {
   updateTag,
   deleteTag,
   bulkDelete,
+  softDeleteTag,
 };
