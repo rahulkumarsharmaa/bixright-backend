@@ -3,6 +3,7 @@ const variantModel = require("../../models/variantModel");
 const transactionModel = require("../../models/transactionModel");
 const couponModel = require("../../models/couponModel");
 const mongoose = require("mongoose");
+const cartModel = require("../../models/cartModel");
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -35,7 +36,17 @@ exports.placeOrder = async (req, res) => {
         .findById(item.variantId)
         .populate("product", "title")
         .lean();
-      console.log(dbProduct);
+
+      const cartItem = await cartModel.findOne({
+        customerId: new mongoose.Types.ObjectId(customerId),
+        productId: new mongoose.Types.ObjectId(dbProduct.product._id),        
+        variantId:new mongoose.Types.ObjectId(item.variantId),
+        isDeleted: false,
+      });
+      if (cartItem) {
+        cartItem.isDeleted = true;
+        await cartItem.save();
+      }
 
       if (!dbProduct) {
         return res.status(404).json({
