@@ -1,5 +1,5 @@
 const Category = require("../../models/categoryModel");
-const SubCategory = require("../../models/subcategoryModel");
+const SubCategory = require("../../models/subCategoryModel");
 const cloudinary = require("../../config/cloudinaryConfig");
 
 const getSubCategoryData = async (req, res) => {
