@@ -7,4 +7,5 @@ module.exports = (app) => {
   app.use(`${apiPrefix}/wishlist`, require("./wishlistRoutes"));
   app.use(`${apiPrefix}/order`, require("./orderRoutes"));
   app.use(`${apiPrefix}/cart`, require("./cartRoute"));
+  app.use(`${apiPrefix}/review`, require("./reviewsRoute"));
 };

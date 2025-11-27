@@ -99,6 +99,7 @@ exports.getCartByCustomer = async (req, res) => {
           title: "$product.title",
           price: "$variant.price",
           images: "$product.images",
+          image: "$variant.image",
           brandName: "$product.brand.name",
           subTitle: "$product.subTitle",
           stockCount: "$variant.quantity",
@@ -169,7 +170,12 @@ exports.updateCart = async (req, res) => {
 
     // Update quantity based on action
     if (action === "increase") {
-      cartItem.quantity += 1;
+      if(cartItem.quantity>=10){
+        return res.status(400).json({ message: "You cannot add more than 10 items" });
+      }
+      else{
+        cartItem.quantity += 1;
+      }
     } else if (action === "decrease") {
       if (cartItem.quantity > 1) {
         cartItem.quantity -= 1;
