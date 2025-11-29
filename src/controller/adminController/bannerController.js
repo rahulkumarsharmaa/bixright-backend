@@ -73,7 +73,6 @@ const addBanner = async (req, res) => {
       subTitle: req.body.subTitle,
       linkUrl: req.body.linkUrl,
       position: req.body.position,
-      status: req.body.status,
       image: imageData,
     });
 
