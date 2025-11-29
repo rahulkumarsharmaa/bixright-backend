@@ -3,14 +3,18 @@ const Banner = require("../../models/bannerModel");
 exports.getActiveHeroBanners = async (req, res) => {
   try {
     // Fetch only active banners
-    const activeBanners = await Banner.find({ status: "active",position:"hero"});
+    const activeBanners = await Banner.find({
+      isActive: true,
+      isDeleted: false,
+      position: "hero",
+    });
 
     // Destructure image field into top-level keys
     const banners = activeBanners.map((banner) => {
-      const { image, ...rest } = banner.toObject(); 
+      const { image, ...rest } = banner.toObject();
       return {
         ...rest,
-        ...image, 
+        ...image,
       };
     });
 

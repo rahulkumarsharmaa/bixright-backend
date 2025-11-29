@@ -26,11 +26,11 @@ const bannerSchema = new mongoose.Schema(
       imageUrl: { type: String, required: true },
       imageId: { type: String, required: true },
     },
-    status: {
-      type: String,
-      enum: ["active", "inactive"],
-      default: "inactive",
+    isActive:{
+      type:Boolean,
+      default:true
     },
+    
 
     isDeleted: {
       type: Boolean,
