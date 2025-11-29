@@ -53,7 +53,6 @@ const addCoupon = async (req, res) => {
       maxDiscountAmount,
       usageLimit,
       usageNumberPerUser,
-      status,
     } = req.body;
 
     if (new Date(startDate) > new Date(endDate)) {
@@ -76,7 +75,6 @@ const addCoupon = async (req, res) => {
       usageNumberPerUser,
       usedBy: [],
       usedCount: 0,
-      status,
     });
 
     await coupon.save();
