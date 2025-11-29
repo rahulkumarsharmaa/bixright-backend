@@ -15,10 +15,10 @@ const brandSchema = new mongoose.Schema(
       unique: true,
       required: true,
     },
-    status: {
-      type: String,
-      enum: ["Active", "InActive"],
-      default: "InActive",
+  
+    isActive:{
+      type:Boolean,
+      default:true
     },
 
     isDeleted: {

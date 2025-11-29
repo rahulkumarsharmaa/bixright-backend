@@ -137,7 +137,7 @@ exports.getActiveBrands = async (req, res) => {
     limit = Number(limit);
 
     // Query only active brands
-    const filter = { status: { $in: ["active", "Active"] }, isDeleted: false };
+    const filter = { isActive: true , isDeleted: false };
 
     let brands, totalBrands;
 
