@@ -1,7 +1,7 @@
 const Brand = require("../../models/brandModel");
 const Product = require("../../models/productModel");
 const Order = require("../../models/orderModel");
-const Supplier = require("../../models/suppliermodel");
+const Supplier = require("../../models/supplierModel");
 const Customer = require("../../models/customerModel");
 
 const getOrderData = async (req, res) => {

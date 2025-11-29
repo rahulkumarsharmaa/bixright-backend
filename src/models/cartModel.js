@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const wishlistSchema = new mongoose.Schema(
+const cartSchema = new mongoose.Schema(
   {
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -12,11 +12,15 @@ const wishlistSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
-    // variantId: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "Variant",
-    //   required: true,
-    // },
+    variantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Variant",
+      required: true,
+    },
+    quantity:{
+        type:Number,
+        default:1
+    },
     isDeleted:{
         type:Boolean,
         default:false
@@ -25,4 +29,4 @@ const wishlistSchema = new mongoose.Schema(
   { timestamps: true, versionKey: false }
 );
 
-module.exports = mongoose.model("Wishlist", wishlistSchema);
+module.exports = mongoose.model("cart", cartSchema);

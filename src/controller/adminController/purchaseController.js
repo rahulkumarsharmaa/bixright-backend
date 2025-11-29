@@ -1,7 +1,7 @@
 const Brand = require("../../models/brandModel");
 const Product = require("../../models/productModel");
-const Purchase = require("../../models/purchasemodel");
-const Supplier = require("../../models/suppliermodel");
+const Purchase = require("../../models/purchaseModel");
+const Supplier = require("../../models/supplierModel");
 
 const getPurchaseData = async (req, res) => {
   try {

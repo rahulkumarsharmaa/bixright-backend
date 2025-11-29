@@ -8,7 +8,7 @@ const Category = require("../../models/categoryModel");
 const Color = require("../../models/colourModel");
 const Product = require("../../models/productModel");
 const Size = require("../../models/sizeModel");
-const SubCategory = require("../../models/subcategoryModel");
+const SubCategory = require("../../models/subCategoryModel");
 
 const getProductData = async (req, res) => {
   try {
