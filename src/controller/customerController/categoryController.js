@@ -62,7 +62,7 @@ exports.getActiveSubCategories = async (req, res) => {
     page = Number(page);
     limit = Number(limit);
 
-    const filter = { status: { $in: ["active", "Active"] }, isDeleted: false };
+    const filter = { isActive:true, isDeleted: false };
 
     if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
       filter["parentCategory.id"] = categoryId;
