@@ -132,7 +132,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "tagIds Missing" });
     }
 
-    const result = await Tag.deleteMany({ _id: { $in: ids } });
+     const result = await Tag.updateMany(
+      { _id: { $in: ids } },
+      { 
+        $set: { 
+          isDeleted: true,
+          deletedAt: new Date()
+        } 
+      }
+    );
 
     return res.status(200).json({
       success: true,

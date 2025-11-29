@@ -2,7 +2,7 @@ const Color = require("../../models/colourModel");
 
 const getColorData = async (req, res) => {
   try {
-    const color = await Color.find();
+    const color = await Color.find({isDeleted : false});
     if (!color) {
       return res
         .status(404)
@@ -146,8 +146,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "colorIds Missing" });
     }
 
-    const result = await Color.deleteMany({ _id: { $in: ids } });
-
+    const result = await Color.updateMany(
+      { _id: { $in: ids } },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      }
+    );
     return res.status(200).json({
       success: true,
       message: `${ids.length} color Deleted Successfully !`,
@@ -180,7 +187,6 @@ const softDeleteColor = async (req, res) => {
       success: true,
       message: "Color Deleted",
       color,
-
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -194,5 +200,5 @@ module.exports = {
   updateColor,
   deleteColor,
   bulkDelete,
-  softDeleteColor
+  softDeleteColor,
 };

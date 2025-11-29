@@ -235,10 +235,19 @@ const addProduct = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!title || !description || !basePrice || !category || !size || !color || !brand) {
+    if (
+      !title ||
+      !description ||
+      !basePrice ||
+      !category ||
+      !size ||
+      !color ||
+      !brand
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Details Missing: Please provide title, description, price, category, size, color, and brand.",
+        message:
+          "Details Missing: Please provide title, description, price, category, size, color, and brand.",
       });
     }
 
@@ -248,23 +257,36 @@ const addProduct = async (req, res) => {
 
     // Fetch and validate brand, category, subcategory
     const brandData = await Brand.findById(brand);
-    if (!brandData) return res.status(400).json({ success: false, message: "Brand not found" });
+    if (!brandData)
+      return res
+        .status(400)
+        .json({ success: false, message: "Brand not found" });
 
     const categoryData = await Category.findById(category);
-    if (!categoryData) return res.status(400).json({ success: false, message: "Category not found" });
+    if (!categoryData)
+      return res
+        .status(400)
+        .json({ success: false, message: "Category not found" });
 
     const subCategoryData = await SubCategory.findById(subCategory);
-    if (!subCategoryData) return res.status(400).json({ success: false, message: "Sub Category not found" });
+    if (!subCategoryData)
+      return res
+        .status(400)
+        .json({ success: false, message: "Sub Category not found" });
 
     // Validate sizes
     const sizeData = await Size.find({ _id: { $in: sizeArr } });
     if (sizeData.length !== sizeArr.length)
-      return res.status(400).json({ success: false, message: "One or more sizes are invalid" });
+      return res
+        .status(400)
+        .json({ success: false, message: "One or more sizes are invalid" });
 
     // Validate colors
     const colorData = await Color.find({ _id: { $in: colorArr } });
     if (colorData.length !== colorArr.length)
-      return res.status(400).json({ success: false, message: "One or more colors are invalid" });
+      return res
+        .status(400)
+        .json({ success: false, message: "One or more colors are invalid" });
 
     // Handle image uploads
     const productImages = [];
@@ -326,7 +348,6 @@ const addProduct = async (req, res) => {
     });
   }
 };
-
 
 const uploadToCloudinary = (fileBuffer) => {
   return new Promise((resolve, reject) => {
@@ -631,7 +652,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "productIds Missing" });
     }
 
-    const result = await Product.deleteMany({ _id: { $in: ids } });
+    const result = await Product.updateMany(
+      { _id: { $in: ids } },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      }
+    );
 
     return res.status(200).json({
       success: true,

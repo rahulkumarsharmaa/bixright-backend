@@ -1,7 +1,7 @@
 const Size = require("../../models/sizeModel");
 const getSizeData = async (req, res) => {
   try {
-    const size = await Size.find();
+    const size = await Size.find({isDeleted : false});
     if (!size) {
       return res.status(404).json({ success: false, message: "No size Found" });
     }
@@ -153,7 +153,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "SizeIds Missing" });
     }
 
-    const result = await Size.deleteMany({ _id: { $in: ids } });
+     const result = await Size.updateMany(
+      { _id: { $in: ids } },
+      { 
+        $set: { 
+          isDeleted: true,
+          deletedAt: new Date()
+        } 
+      }
+    );
 
     return res.status(200).json({
       success: true,
@@ -168,7 +176,7 @@ const bulkDelete = async (req, res) => {
 // Soft Delete
 const softDeleteSize = async (req, res) => {
   try {
-    const size = await Customer.findByIdAndUpdate(
+    const size = await Size.findByIdAndUpdate(
       req.params.id,
       {
         isDeleted: true,

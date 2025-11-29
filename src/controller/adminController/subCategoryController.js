@@ -4,7 +4,7 @@ const cloudinary = require("../../config/cloudinaryConfig");
 
 const getSubCategoryData = async (req, res) => {
   try {
-    const subCategory = await SubCategory.find();
+    const subCategory = await SubCategory.find({ isDeleted: false });
     if (!subCategory) {
       return res
         .status(404)
@@ -136,38 +136,118 @@ const addSubCategory = async (req, res) => {
 const updateSubCategory = async (req, res) => {
   try {
     const subCategoryId = req.params.id;
-    const data = req.body;
-    console.log(data);
 
     if (!subCategoryId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "SubCategoryId Missing" });
+      return res.status(400).json({
+        success: false,
+        message: "CategoryId Missing",
+      });
     }
 
-    const subCategory = await SubCategory.findByIdAndUpdate(
-      subCategoryId,
-      data,
-      {
-        new: true,
+    const { title, description, parentCategory, status, oldImage } = req.body;
+    const file = req.file;
+
+    let imageUrl = oldImage; // default existing image
+
+    // If new image uploaded
+    if (file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "variants" },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+        stream.end(file.buffer);
+      });
+
+      imageUrl = uploadResult.secure_url;
+    }
+
+    // Build update object ONLY with fields that exist
+    const updateData = {};
+
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (status !== undefined) updateData.status = status;
+    if (imageUrl !== undefined) updateData.image = imageUrl;
+
+    if (parentCategory !== undefined) {
+      // Fetch the category to get its title/name
+      const parentCategoryExist = await Category.findById(parentCategory);
+      if (!parentCategoryExist) {
+        return res.status(400).json({
+          success: false,
+          message: "Parent Category Not Found!",
+        });
       }
+
+      updateData.parentCategory = {
+        id: parentCategoryExist._id,
+        name: parentCategoryExist.title,
+      };
+    }
+
+    const updatedSubCategory = await SubCategory.findByIdAndUpdate(
+      subCategoryId,
+      updateData,
+      { new: true }
     );
 
-    if (!subCategory) {
+    if (!updatedSubCategory) {
       return res
         .status(404)
-        .json({ success: false, message: "SubCategory not found" });
+        .json({ success: false, message: "Sub Category not found" });
     }
 
     return res.status(200).json({
       success: true,
-      message: "SubCategory Updated Successfully",
-      subCategory,
+      message: "Sub Category Updated Successfully",
+      subCategory: updatedSubCategory,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
+
+  // try {
+  //   const subCategoryId = req.params.id;
+  //   const data = req.body;
+  //   console.log(data);
+
+  //   if (!subCategoryId) {
+  //     return res
+  //       .status(400)
+  //       .json({ success: false, message: "SubCategoryId Missing" });
+  //   }
+
+  //   const subCategory = await SubCategory.findByIdAndUpdate(
+  //     subCategoryId,
+  //     data,
+  //     {
+  //       new: true,
+  //     }
+  //   );
+
+  //   if (!subCategory) {
+  //     return res
+  //       .status(404)
+  //       .json({ success: false, message: "SubCategory not found" });
+  //   }
+
+  //   return res.status(200).json({
+  //     success: true,
+  //     message: "SubCategory Updated Successfully",
+  //     subCategory,
+  //   });
+  // } catch (error) {
+  //   console.log(error);
+  //   res.status(500).json({ success: false, message: error.message });
+  // }
 };
 
 const deleteSubCategory = async (req, res) => {
@@ -205,7 +285,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "SubCategoryIds Missing" });
     }
 
-    const result = await SubCategory.deleteMany({ _id: { $in: ids } });
+     const result = await SubCategory.updateMany(
+      { _id: { $in: ids } },
+      { 
+        $set: { 
+          isDeleted: true,
+          deletedAt: new Date()
+        } 
+      }
+    );
 
     return res.status(200).json({
       success: true,

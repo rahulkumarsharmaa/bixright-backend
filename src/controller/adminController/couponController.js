@@ -164,7 +164,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "CouponIds Missing" });
     }
 
-    const result = await Coupon.deleteMany({ _id: { $in: ids } });
+    const result = await Coupon.updateMany(
+      { _id: { $in: ids } },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      }
+    );
 
     return res.status(200).json({
       success: true,

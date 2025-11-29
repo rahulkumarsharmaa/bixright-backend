@@ -162,7 +162,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "BannerIds Missing" });
     }
 
-    const result = await Banner.deleteMany({ _id: { $in: ids } });
+    const result = await Banner.updateMany(
+      { _id: { $in: ids } },
+      { 
+        $set: { 
+          isDeleted: true,
+          deletedAt: new Date()
+        } 
+      }
+    );
 
     return res.status(200).json({
       success: true,

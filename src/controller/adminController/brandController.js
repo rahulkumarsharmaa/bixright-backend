@@ -1,7 +1,7 @@
 const Brand = require("../../models/brandModel");
 const getBrandData = async (req, res) => {
   try {
-    const brand = await Brand.find();
+    const brand = await Brand.find({isDeleted : false});
     if (!brand) {
       return res
         .status(404)
@@ -146,7 +146,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "BrandIds Missing" });
     }
 
-    const result = await Brand.deleteMany({ _id: { $in: ids } });
+     const result = await Brand.updateMany(
+      { _id: { $in: ids } },
+      { 
+        $set: { 
+          isDeleted: true,
+          deletedAt: new Date()
+        } 
+      }
+    );
 
     return res.status(200).json({
       success: true,

@@ -2,7 +2,7 @@ const Category = require("../../models/categoryModel");
 const cloudinary = require('../../config/cloudinaryConfig')
 const getCategoryData = async (req, res) => {
   try {
-    const category = await Category.find();
+    const category = await Category.find({isDeleted : false});
     if (!category) {
       return res
         .status(404)
@@ -135,20 +135,50 @@ const addCategory = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const categoryId = req.params.id;
-    const data = req.body;
-    console.log(data);
 
     if (!categoryId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "CategoryId Missing" });
+      return res.status(400).json({
+        success: false,
+        message: "CategoryId Missing",
+      });
     }
 
-    const category = await Category.findByIdAndUpdate(categoryId, data, {
-      new: true,
-    });
+    const { title, description, status, oldImage } = req.body;
+    const file = req.file;
 
-    if (!category) {
+    let imageUrl = oldImage; // default existing image
+
+    // If new image uploaded
+    if (file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "variants" },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+        stream.end(file.buffer);
+      });
+
+      imageUrl = uploadResult.secure_url;
+    }
+
+    // Build update object ONLY with fields that exist
+    const updateData = {};
+
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (status !== undefined) updateData.status = status;
+    if (imageUrl !== undefined) updateData.image = imageUrl;
+
+    const updatedCategory = await Category.findByIdAndUpdate(
+      categoryId,
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedCategory) {
       return res
         .status(404)
         .json({ success: false, message: "Category not found" });
@@ -157,13 +187,50 @@ const updateCategory = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Category Updated Successfully",
-      category,
+      category: updatedCategory,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
+
+
+// const updateCategory = async (req, res) => {
+//   try {
+//     const categoryId = req.params.id;
+//     const data = req.body;
+//     console.log(data);
+
+//     if (!categoryId) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "CategoryId Missing" });
+//     }
+
+//     const category = await Category.findByIdAndUpdate(categoryId, data, {
+//       new: true,
+//     });
+
+//     if (!category) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Category not found" });
+//     }
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Category Updated Successfully",
+//       category,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
 
 const deleteCategory = async (req, res) => {
   try {
@@ -200,7 +267,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "CategoryIds Missing" });
     }
 
-    const result = await Category.deleteMany({ _id: { $in: ids } });
+     const result = await Category.updateMany(
+      { _id: { $in: ids } },
+      { 
+        $set: { 
+          isDeleted: true,
+          deletedAt: new Date()
+        } 
+      }
+    );
 
     return res.status(200).json({
       success: true,

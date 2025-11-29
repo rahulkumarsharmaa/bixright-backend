@@ -144,7 +144,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "ReviewIds Missing" });
     }
 
-    const result = await Review.deleteMany({ _id: { $in: ids } });
+     const result = await Review.updateMany(
+      { _id: { $in: ids } },
+      { 
+        $set: { 
+          isDeleted: true,
+          deletedAt: new Date()
+        } 
+      }
+    );
 
     return res.status(200).json({
       success: true,

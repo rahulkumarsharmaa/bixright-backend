@@ -18,7 +18,6 @@ const orderSchema = new mongoose.Schema(
       unique: true,
     },
 
-    // 🧍 Customer who placed the order
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
@@ -53,6 +52,7 @@ const orderSchema = new mongoose.Schema(
       country: { type: String },
       postalCode: { type: String },
     },
+
     shippingAddress: {
       addressLine1: { type: String },
       addressLine2: { type: String },
@@ -62,11 +62,10 @@ const orderSchema = new mongoose.Schema(
       postalCode: { type: String },
     },
 
-    //  Payment Info
     paymentMethod: {
       type: String,
       enum: ["cash", "cod", "credit-card", "upi", "bank-transfer"],
-      default: "cash",
+      default: "cod",
     },
 
     paymentStatus: {
@@ -98,7 +97,7 @@ const orderSchema = new mongoose.Schema(
       default: null,
     },
 
-    // 💰 Financial Summary (auto-calculated)
+    // Financial Summary (auto-calculated)
     subTotal: { type: Number, required: true, default: 0 },
     taxAmount: { type: Number, default: 0 },
     shippingCharge: { type: Number, default: 0 },
@@ -130,7 +129,7 @@ orderSchema.pre("save", async function (next) {
     this.shippingCharge = this.subTotal > 500 ? 0 : 50;
     this.totalAmount = this.subTotal + this.taxAmount + this.shippingCharge;
 
-    // ✅ Generate unique sequential orderId if new
+    //  Generate unique sequential orderId if new
     if (this.isNew && !this.orderId) {
       const counter = await Counter.findOneAndUpdate(
         { name: "orderId" },

@@ -208,7 +208,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "VariantIds Missing" });
     }
 
-    const result = await Variant.deleteMany({ _id: { $in: ids } });
+    const result = await Variant.updateMany(
+      { _id: { $in: ids } },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      }
+    );
 
     return res.status(200).json({
       success: true,

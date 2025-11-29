@@ -35,7 +35,8 @@ const getOrderById = async (req, res) => {
 
   try {
     const order = await Order.findById(id)
-      .populate("product.productId", "imageUrl title price")
+      .populate("product.productId", "images title price")
+      .populate('product.variantId', 'color size sku price' )
       .populate("customer", "firstName lastName email  address.city phone ");
     if (!order) {
       return res
@@ -229,7 +230,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "orderIds Missing" });
     }
 
-    const result = await Order.deleteMany({ _id: { $in: ids } });
+     const result = await Order.updateMany(
+      { _id: { $in: ids } },
+      { 
+        $set: { 
+          isDeleted: true,
+          deletedAt: new Date()
+        } 
+      }
+    );
 
     return res.status(200).json({
       success: true,
