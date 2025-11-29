@@ -137,7 +137,8 @@ exports.getAvailableCoupons = async (req, res) => {
 
     const coupons = await couponModel
       .find({
-        status: "active",
+        isActive: true,
+        isDeleted: false,
         startDate: { $lte: currentDate },
         endDate: { $gte: currentDate },
       })
