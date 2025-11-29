@@ -22,7 +22,7 @@ exports.getActiveProducts = async (req, res) => {
     // Base filter
 
     const filter = {
-      status: "active",
+      isActive:true,
       isDeleted: false,
     };
 
@@ -84,7 +84,7 @@ exports.getActiveProducts = async (req, res) => {
       products = await ProductModel.find(filter)
         .sort({ createdAt: -1 })
         .select(
-          "title subTitle description price discount category.id category.name subCategory.id subCategory.name size.id size.name brand.id brand.name quantity images status isVisible createdAt updatedAt"
+          "title subTitle description price discount category.id category.name subCategory.id subCategory.name size.id size.name brand.id brand.name quantity images isActive isVisible createdAt updatedAt"
         );
       total = products.length;
     } else {
@@ -97,7 +97,7 @@ exports.getActiveProducts = async (req, res) => {
           .skip(skip)
           .limit(limit)
           .select(
-            "title subTitle description category.id category.name subCategory.id subCategory.name size brand.id brand.name quantity images status basePrice"
+            "title subTitle description category.id category.name subCategory.id subCategory.name size brand.id brand.name quantity images isActive basePrice"
           ),
         ProductModel.countDocuments(filter),
       ]);
@@ -204,7 +204,7 @@ exports.fetchfilter = async (req, res) => {
     let { categoryId, subCategoryId } = req.query;
 
     const filter = {
-      status: "active",
+      isActive: true,
       isDeleted: false,
     };
 

@@ -485,7 +485,7 @@ const updateProduct = async (req, res) => {
       size,
       color,
       imagesToDelete,
-      status,
+      isActive,
       isVisible,
     } = req.body;
 
@@ -497,7 +497,7 @@ const updateProduct = async (req, res) => {
     if (subTitle) updateData.subTitle = subTitle;
     if (description) updateData.description = description;
     if (basePrice) updateData.basePrice = basePrice;
-    if (status) updateData.status = status;
+    if (isActive) updateData.isActive = isActive;
     if (typeof isVisible !== "undefined") updateData.isVisible = isVisible;
 
     // ---------- BRAND ----------
