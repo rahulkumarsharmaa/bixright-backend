@@ -107,7 +107,6 @@ const addCategory = async (req, res) => {
       image : imageUrl,
       title,
       description,
-      status,
       // parentCategory: parentCatData
       //   ? {
       //       id: parentCatData._id || null ,
@@ -143,7 +142,7 @@ const updateCategory = async (req, res) => {
       });
     }
 
-    const { title, description, status, oldImage } = req.body;
+    const { title, description, isActive, oldImage } = req.body;
     const file = req.file;
 
     let imageUrl = oldImage; // default existing image
@@ -169,7 +168,7 @@ const updateCategory = async (req, res) => {
 
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
-    if (status !== undefined) updateData.status = status;
+    if (isActive !== undefined) updateData.isActive = isActive;
     if (imageUrl !== undefined) updateData.image = imageUrl;
 
     const updatedCategory = await Category.findByIdAndUpdate(
