@@ -302,21 +302,63 @@ exports.fetchfilter = async (req, res) => {
 exports.getRecentlyAddedProducts = async (req, res) => {
   try {
    
-    let { page = 1, limit = 10 } = req.query;
+    let { page = 1, limit = 10,brandId,sizeId,colorId,minPrice,maxPrice } = req.query;
     page = Number(page);
     limit = Number(limit);
+    let filter={isDeleted:false,isActive:true}
+
+        // Filter by brandId
+ if (brandId) {
+      const brandIds = brandId
+        .split(",")
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      if (brandIds.length > 0) {
+        filter["brand.id"] = { $in: brandIds };
+      }
+    }
+
+    if (sizeId) {
+      const sizeIds = sizeId
+        .split(",")
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      if (sizeIds.length > 0) {
+        filter["size.id"] = { $in: sizeIds };
+      }
+    }
+
+    if (colorId) {
+      const colorIds = colorId
+        .split(",")
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      if (colorIds.length > 0) {
+        filter["color.id"] = { $in: colorIds };
+      }
+    }
+
+    if (minPrice || maxPrice) {
+      filter.basePrice = {};
+      if (minPrice) filter.basePrice.$gte = Number(minPrice);
+      if (maxPrice) filter.basePrice.$lte = Number(maxPrice);
+    }
+
 
     // Calculate skip for pagination
     const skip = (page - 1) * limit;
 
     // Fetch products sorted by createdAt (descending)
-    const products = await ProductModel.find({ isDeleted: false })
+    const products = await ProductModel.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
 
     // Get total count for pagination metadata
-    const totalCount = await ProductModel.countDocuments({ isDeleted: false });
+    const totalCount = await ProductModel.countDocuments(filter);
 
       const formattedProducts = products.map((item) => {
       const coverImage = item.images?.find((image) => image.isCover);
