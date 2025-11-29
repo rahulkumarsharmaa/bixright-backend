@@ -13,7 +13,7 @@ exports.getActiveCategories = async (req, res) => {
     limit = Number(limit);
 
     // Base filter
-    const filter = { status: { $in: ["active", "Active"] } };
+    const filter = { status: { $in: ["active", "Active"] },isDeleted:false };
 
     let categories;
     let total;
@@ -62,7 +62,7 @@ exports.getActiveSubCategories = async (req, res) => {
     page = Number(page);
     limit = Number(limit);
 
-    const filter = { status: { $in: ["active", "Active"] }  };
+    const filter = { status: { $in: ["active", "Active"] },isDeleted:false  };
 
     if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
       filter["parentCategory.id"] = categoryId;
@@ -137,7 +137,7 @@ exports.getActiveBrands = async (req, res) => {
     limit = Number(limit);
 
     // Query only active brands
-    const filter = { status: { $in: ["active", "Active"] }  };
+    const filter = { status: { $in: ["active", "Active"] }  ,isDeleted:false};
 
     let brands, totalBrands;
 
