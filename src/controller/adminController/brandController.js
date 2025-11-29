@@ -41,7 +41,7 @@ const getBrandById = async (req, res) => {
 const addBrand = async (req, res) => {
   try {
     console.log(req.body)
-    const { title, status } = req.body;
+    const { title } = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -63,7 +63,6 @@ const addBrand = async (req, res) => {
 
     const brand = new Brand({
       title,
-      status,
     });
 
     await brand.save();
