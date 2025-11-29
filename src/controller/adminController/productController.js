@@ -466,6 +466,7 @@ const uploadToCloudinary = (fileBuffer) => {
 // };
 
 const updateProduct = async (req, res) => {
+  console.log('body', req.body)
   try {
     const productId = req.params.id;
     if (!productId) {
@@ -485,9 +486,11 @@ const updateProduct = async (req, res) => {
       size,
       color,
       imagesToDelete,
+    
       isActive,
       isVisible,
     } = req.body;
+    console.log(isActive)
 
     // Prepare update object
     const updateData = {};
@@ -497,8 +500,10 @@ const updateProduct = async (req, res) => {
     if (subTitle) updateData.subTitle = subTitle;
     if (description) updateData.description = description;
     if (basePrice) updateData.basePrice = basePrice;
-    if (isActive) updateData.isActive = isActive;
+    if (isActive !== undefined) updateData.isActive = isActive;
     if (typeof isVisible !== "undefined") updateData.isVisible = isVisible;
+
+    console.log('update', updateData)
 
     // ---------- BRAND ----------
     if (brand) {
