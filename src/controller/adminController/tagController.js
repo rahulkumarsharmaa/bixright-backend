@@ -2,7 +2,7 @@ const Tag = require("../../models/tagModel");
 
 const getTagData = async (req, res) => {
   try {
-    const tag = await Tag.find();
+    const tag = await Tag.find({isDeleted : false});
     if (!tag) {
       return res.status(404).json({ success: false, message: "No tag Found" });
     }

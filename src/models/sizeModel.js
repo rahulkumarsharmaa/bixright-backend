@@ -32,10 +32,9 @@ const sizeSchema = new mongoose.Schema(
       default: null,
     },
 
-    status: {
-      type: String,
-      enum: ["Active", "InActive"],
-      default: "InActive",
+    isActive : {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true, versionKey: false }

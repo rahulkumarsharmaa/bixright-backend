@@ -119,7 +119,6 @@ const addVariant = async (req, res) => {
 
 const updateVariant = async (req, res) => {
   try {
-    console.log(req.body);
     const variantId = req.params.id;
     const data = req.body;
     const file = req.file;
@@ -145,6 +144,13 @@ const updateVariant = async (req, res) => {
         .json({ success: false, message: "Variant not found" });
     }
 
+    console.log("variant", variant);
+
+    //find and update same colour variant
+    const sameColorVariant = await Variant.find({ color: variant.color });
+
+    console.log("samecolor", sameColorVariant);
+
     if (file) {
       const uploadResult = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
@@ -159,7 +165,14 @@ const updateVariant = async (req, res) => {
       });
 
       variant.image = uploadResult.secure_url;
-      await variant.save();
+      await variant.save()
+
+      // await Variant.updateMany(
+      //   {product : variant.product ,  color : variant.color },
+      //   {
+      //     $set: { image: uploadResult.secure_url },
+      //   }
+      // );
     }
 
     return res.status(200).json({

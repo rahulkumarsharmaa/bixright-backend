@@ -37,7 +37,7 @@ const getSizeById = async (req, res) => {
 const addSize = async (req, res) => {
   try {
     console.log(req.body);
-    const { title, code, description, status } = req.body;
+    const { title, code, description } = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -70,7 +70,6 @@ const addSize = async (req, res) => {
       title,
       code,
       description,
-      status,
     });
 
     await size.save();

@@ -42,7 +42,7 @@ const getColorById = async (req, res) => {
 const addColor = async (req, res) => {
   try {
     console.log(req.body);
-    const { title, status } = req.body;
+    const { title } = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -63,7 +63,6 @@ const addColor = async (req, res) => {
 
     const color = new Color({
       title: lowerTitle,
-      status,
     });
 
     await color.save();

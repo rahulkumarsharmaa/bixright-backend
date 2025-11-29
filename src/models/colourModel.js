@@ -10,10 +10,9 @@ const colorSchema = new mongoose.Schema(
       set: (v) => v.replace(/\s+/g, "-"),
     },
 
-    status: {
-      type: String,
-      enum: ["Active", "InActive"],
-      default: "InActive",
+    isActive: {
+      type: Boolean,
+      default: true,
     },
 
     isDeleted: {

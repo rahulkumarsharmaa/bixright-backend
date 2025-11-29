@@ -466,7 +466,7 @@ const uploadToCloudinary = (fileBuffer) => {
 // };
 
 const updateProduct = async (req, res) => {
-  console.log('body', req.body)
+  console.log("body", req.body);
   try {
     const productId = req.params.id;
     if (!productId) {
@@ -486,13 +486,11 @@ const updateProduct = async (req, res) => {
       size,
       color,
       imagesToDelete,
-    
+      coverIndex,
       isActive,
       isVisible,
     } = req.body;
-    console.log(isActive)
 
-    // Prepare update object
     const updateData = {};
 
     // ---------- BASIC FIELDS ----------
@@ -502,8 +500,6 @@ const updateProduct = async (req, res) => {
     if (basePrice) updateData.basePrice = basePrice;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (typeof isVisible !== "undefined") updateData.isVisible = isVisible;
-
-    console.log('update', updateData)
 
     // ---------- BRAND ----------
     if (brand) {
@@ -559,16 +555,23 @@ const updateProduct = async (req, res) => {
 
     // ---------- DELETE IMAGES ----------
     if (imagesToDelete) {
-      const ids = imagesToDelete.split(",");
-      for (let publicId of ids) {
+      console.log("imagestodelete", imagesToDelete);
+      const ids = Array.isArray(imagesToDelete)
+        ? imagesToDelete
+        : imagesToDelete.split(",").filter(Boolean);
+
+      console.log("ids", ids);
+      for (const publicId of ids) {
         await cloudinary.uploader.destroy(publicId);
-        await Product.findByIdAndUpdate(productId, {
-          $pull: { images: { imageId: publicId } },
-        });
       }
+
+      await Product.findByIdAndUpdate(productId, {
+        $pull: { images: { imageId: { $in: ids } } },
+      });
     }
 
     // ---------- ADD NEW IMAGES ----------
+    let pushData = {};
     if (req.files && req.files.length > 0) {
       const uploadedImages = [];
       for (const file of req.files) {
@@ -576,18 +579,18 @@ const updateProduct = async (req, res) => {
         uploadedImages.push({
           imageUrl: result.secure_url,
           imageId: result.public_id,
-          isCover: false, // default, can later let admin set cover
+          isCover: false,
         });
       }
-      if (!updateData.$push) updateData.$push = {};
-      updateData.$push.images = { $each: uploadedImages };
+      pushData.$push = { images: { $each: uploadedImages } };
     }
 
     // ---------- UPDATE PRODUCT ----------
-    let product = await Product.findByIdAndUpdate(productId, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    let product = await Product.findByIdAndUpdate(
+      productId,
+      { $set: updateData, ...pushData },
+      { new: true, runValidators: true }
+    );
 
     if (!product)
       return res
@@ -595,20 +598,20 @@ const updateProduct = async (req, res) => {
         .json({ success: false, message: "Product not found" });
 
     // ---------- REGENERATE VARIANTS ----------
-    // If size or color changed, regenerate variants
     if ((size && size.length > 0) || (color && color.length > 0)) {
       await generateProductVariants(product);
-      product = await Product.findById(productId); // get updated variants
+      product = await Product.findById(productId);
     }
 
     // ---------- HANDLE COVER IMAGE ----------
-    // If product has no cover image, automatically assign the first image as cover
-    if (product.images && product.images.length > 0) {
-      const hasCover = product.images.some((img) => img.isCover);
-      if (!hasCover) {
-        product.images[0].isCover = true;
-        await product.save();
-      }
+    if (coverIndex !== undefined && product.images[coverIndex]) {
+      product.images.forEach(
+        (img, idx) => (img.isCover = idx === parseInt(coverIndex, 10))
+      );
+      await product.save();
+    } else if (product.images && !product.images.some((img) => img.isCover)) {
+      product.images[0].isCover = true;
+      await product.save();
     }
 
     return res.status(200).json({
