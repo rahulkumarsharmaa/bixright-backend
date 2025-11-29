@@ -50,7 +50,7 @@ const addSubCategory = async (req, res) => {
     console.log("file", file);
 
     let imageUrl = null;
-    const { title, parentCategory, description, status } = req.body;
+    const { title, parentCategory, description, isActive } = req.body;
 
     // 🟡 Validate input
     if (!title) {
@@ -114,7 +114,7 @@ const addSubCategory = async (req, res) => {
         name: parentCategoryExist?.title,
       },
       description,
-      status,
+      
     });
 
     await subCategory.save();
@@ -144,7 +144,7 @@ const updateSubCategory = async (req, res) => {
       });
     }
 
-    const { title, description, parentCategory, status, oldImage } = req.body;
+    const { title, description, parentCategory, isActive, oldImage } = req.body;
     const file = req.file;
 
     let imageUrl = oldImage; // default existing image
@@ -170,7 +170,7 @@ const updateSubCategory = async (req, res) => {
 
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
-    if (status !== undefined) updateData.status = status;
+    if (isActive !== undefined) updateData.isActive = isActive;
     if (imageUrl !== undefined) updateData.image = imageUrl;
 
     if (parentCategory !== undefined) {
