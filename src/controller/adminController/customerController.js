@@ -58,7 +58,6 @@ const addCustomer = async (req, res) => {
       email,
       address,
       bankDetails,
-      status,
       remark,
     } = req.body;
 
@@ -97,7 +96,6 @@ const addCustomer = async (req, res) => {
       email,
       address,
       bankDetails,
-      status,
       remark,
     });
 

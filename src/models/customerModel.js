@@ -89,10 +89,9 @@ const customerSchema = new mongoose.Schema(
 
     lastLoginAt: { type: Date },
 
-    status: {
-      type: String,
-      enum: ["active", "inactive"],
-      default: "active",
+    isActive:{
+      type:Boolean,
+      default:true
     },
 
     remark: {
