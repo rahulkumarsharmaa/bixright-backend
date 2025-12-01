@@ -92,6 +92,12 @@ exports.customerLogin = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
+      if (customer.isActive === false) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Customer is Inactive" });
+    }
+
     // Compare password
     const isMatch = await bcrypt.comparePassword(password, customer.password);
     if (!isMatch) {
