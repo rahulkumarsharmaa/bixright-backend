@@ -290,6 +290,45 @@ const softDeleteOrder = async (req, res) => {
   }
 };
 
+const confirmOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const {expectedDeliveryDate} = req.body;
+
+   if(!expectedDeliveryDate){
+    return res.status(400).json({ message: "expected delivery date is required" });
+   }
+
+    if (!orderId) {
+      return res.status(400).json({ message: "Order ID is required" });
+    }
+
+    // Find order by orderId
+    const order = await Order.findOne({ orderId });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    order.orderStatus = "confirmed";
+    order.expectedDeliveryDate = expectedDeliveryDate;
+
+    await order.save();
+
+    return res.status(200).json({
+      message: "Order confirmed successfully!",
+      order: {
+        orderId: order.orderId,
+        orderStatus: order.orderStatus,
+        expectedDeliveryDate: order.expectedDeliveryDate,
+        updatedAt: order.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error confirming order:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
 module.exports = {
   getOrderData,
   getOrderById,
@@ -298,4 +337,5 @@ module.exports = {
   deleteOrder,
   bulkDelete,
   softDeleteOrder,
+  confirmOrder,
 };

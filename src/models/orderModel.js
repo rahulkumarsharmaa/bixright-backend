@@ -96,7 +96,14 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-
+    expectedDeliveryDate:{
+      type:Date,
+      default:null
+    },
+    deliveryDate:{
+      type:Date,
+      default:null
+    },
     // Financial Summary (auto-calculated)
     subTotal: { type: Number, required: true, default: 0 },
     taxAmount: { type: Number, default: 0 },
