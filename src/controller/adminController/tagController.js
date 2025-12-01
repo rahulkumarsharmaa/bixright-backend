@@ -1,71 +1,102 @@
 const Tag = require("../../models/tagModel");
+const cloudinary = require("../../config/cloudinaryConfig");
+
+const uploadImagesToCloudinary = async (files) => {
+  const uploadPromises = files.map((file) => {
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream({ folder: "tags" }, (error, result) => {
+          if (error) reject(error);
+          else resolve(result.secure_url);
+        })
+        .end(file.buffer);
+    });
+  });
+  return Promise.all(uploadPromises);
+};
 
 const getTagData = async (req, res) => {
   try {
-    const tag = await Tag.find({isDeleted : false});
-    if (!tag) {
-      return res.status(404).json({ success: false, message: "No tag Found" });
+    const tags = await Tag.find({ isDeleted: false });
+
+    if (!tags || tags.length === 0) {
+      return res.status(404).json({ success: false, message: "No tags found" });
     }
 
-    return res.status(200).json({ success: true, message: "tag Fetched", tag });
+    return res.status(200).json({
+      success: true,
+      message: "Tags fetched successfully",
+      tags,
+    });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json(error.message);
+    console.error("Error fetching tags:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 const getTagById = async (req, res) => {
-  const id = req.params;
-  console.log(id);
+  const { id } = req.params;
 
   try {
     const tag = await Tag.findById(id);
-    if (!tag) {
-      return res.status(404).json({ success: false, message: "No tag Found" });
+
+    if (!tag || tag.isDeleted) {
+      return res.status(404).json({ success: false, message: "Tag not found" });
     }
 
-    return res.status(200).json({ success: true, message: "tag Fetched", tag });
+    return res
+      .status(200)
+      .json({ success: true, message: "Tag fetched successfully", tag });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json(error.message);
+    console.error("Error fetching tag:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 const addTag = async (req, res) => {
   try {
-    console.log(req.body);
-    const { title, status } = req.body;
+    const { title, subTitle, isActive } = req.body;
 
-    if (!title) {
-      return res.status(400).json({
-        success: false,
-        message: "Details Missing !",
-      });
+    if (!title || !subTitle) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Both title and subTitle are required",
+        });
     }
 
     const lowerTitle = title.toLowerCase();
 
-    const existing = await Tag.findOne({ title: lowerTitle });
+    const existing = await Tag.findOne({ title: lowerTitle, isDeleted: false });
     if (existing) {
       return res.status(400).json({
         success: false,
-        message: "Tag Already Exist !",
+        message: "Tag already exists",
       });
     }
 
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      imageUrls = await uploadImagesToCloudinary(req.files);
+    }
+
     const tag = new Tag({
-      title,
-      status,
+      title: lowerTitle,
+      subTitle,
+      images: imageUrls,
+      isActive: isActive !== undefined ? isActive : true,
     });
 
     await tag.save();
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: "Tag Created Successfully !",
+      message: "Tag created successfully",
+      tag,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error creating tag:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -73,29 +104,36 @@ const addTag = async (req, res) => {
 const updateTag = async (req, res) => {
   try {
     const tagId = req.params.id;
-    const data = req.body;
-    console.log(data);
+    const { title, subTitle, isActive } = req.body;
 
-    if (!tagId) {
-      return res.status(400).json({ success: false, message: "tagId Missing" });
-    }
-
-    const tag = await Tag.findByIdAndUpdate(tagId, data, {
-      new: true,
-    });
-
+    const tag = await Tag.findById(tagId);
     if (!tag) {
-      return res.status(404).json({ success: false, message: "tag not found" });
+      return res.status(404).json({ success: false, message: "Tag not found" });
     }
+
+    //  Upload new images if provided
+    let newImages = tag.images; // keep old ones
+    if (req.files && req.files.length > 0) {
+      const uploaded = await uploadImagesToCloudinary(req.files);
+      newImages = [...newImages, ...uploaded];
+    }
+
+    //  Update fields
+    if (title) tag.title = title.toLowerCase();
+    if (subTitle) tag.subTitle = subTitle;
+    if (isActive !== undefined) tag.isActive = isActive;
+    tag.images = newImages;
+
+    await tag.save();
 
     return res.status(200).json({
       success: true,
-      message: "tag Updated Successfully",
+      message: "Tag updated successfully",
       tag,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Error updating tag:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -132,13 +170,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "tagIds Missing" });
     }
 
-     const result = await Tag.updateMany(
+    const result = await Tag.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
-          deletedAt: new Date()
-        } 
+          deletedAt: new Date(),
+        },
       }
     );
 
@@ -165,9 +203,7 @@ const softDeleteTag = async (req, res) => {
     );
 
     if (!tag) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Tag not found" });
+      return res.status(404).json({ success: false, message: "Tag not found" });
     }
 
     res.json({

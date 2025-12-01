@@ -9,6 +9,7 @@ const Color = require("../../models/colourModel");
 const Product = require("../../models/productModel");
 const Size = require("../../models/sizeModel");
 const SubCategory = require("../../models/subCategoryModel");
+const Tag = require("../../models/tagModel");
 
 const getProductData = async (req, res) => {
   try {
@@ -232,6 +233,7 @@ const addProduct = async (req, res) => {
       size,
       color,
       basePrice,
+      tags,
     } = req.body;
 
     // Validate required fields
@@ -254,6 +256,7 @@ const addProduct = async (req, res) => {
     // Normalize size and color to arrays
     const sizeArr = Array.isArray(size) ? size : [size].filter(Boolean);
     const colorArr = Array.isArray(color) ? color : [color].filter(Boolean);
+    const tagsArr = Array.isArray(tags) ? tags : [tags].filter(Boolean);
 
     // Fetch and validate brand, category, subcategory
     const brandData = await Brand.findById(brand);
@@ -287,6 +290,16 @@ const addProduct = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "One or more colors are invalid" });
+
+        let tagData=[]
+        if(tags){
+
+           tagData = await Tag.find({ _id: { $in: tagsArr } });
+          if (tagData.length !== tagsArr.length)
+            return res
+          .status(400)
+          .json({ success: false, message: "One or more tags are invalid" });
+        }
 
     // Handle image uploads
     const productImages = [];
@@ -326,6 +339,7 @@ const addProduct = async (req, res) => {
       subCategory: { id: subCategoryData._id, name: subCategoryData.title },
       size: sizeData.map((s) => ({ id: s._id })),
       color: colorData.map((c) => ({ id: c._id })),
+      tags: tagData.map((t) => ({ id: t._id, name: t.title })),
       images: productImages,
     });
 
@@ -489,6 +503,7 @@ const updateProduct = async (req, res) => {
       coverIndex,
       isActive,
       isVisible,
+      tags,
     } = req.body;
 
     const updateData = {};
@@ -553,6 +568,16 @@ const updateProduct = async (req, res) => {
       updateData.color = colorData.map((c) => ({ id: c._id }));
     }
 
+    if (tags) {
+      const tagsArr = Array.isArray(tags) ? tags : tags.split(",");
+      const tagsData = await Tag.find({ _id: { $in: tagsArr } });
+      if (tagsData.length !== tagsArr.length)
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid tags provided" });
+      updateData.tags = tagsData.map((t) => ({ id: t._id, name: t.title }));
+    }
+
     // ---------- DELETE IMAGES ----------
     if (imagesToDelete) {
       console.log("imagestodelete", imagesToDelete);
@@ -573,7 +598,7 @@ const updateProduct = async (req, res) => {
     // ---------- ADD NEW IMAGES ----------
     let pushData = {};
     if (req.files && req.files.length > 0) {
-      console.log('files', req.files);
+      console.log("files", req.files);
       const uploadedImages = [];
       for (const file of req.files) {
         const result = await uploadToCloudinary(file.buffer);

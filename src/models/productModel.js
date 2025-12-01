@@ -56,16 +56,26 @@ const productSchema = new mongoose.Schema(
         },
       },
     ],
+    tags: [
+      {
+        _id: false,
+        id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Color",
+        },
+        name: { type: String },
+      },
+    ],
 
     // quantity: {
     //   type: Number,
     //   required: true,
     // },
 
-   isActive:{
-    type:Boolean,
-    default:true
-   },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
 
     isDeleted: {
       type: Boolean,

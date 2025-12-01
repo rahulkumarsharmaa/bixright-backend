@@ -10,13 +10,25 @@ const tagSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
-
-    status: {
+    subTitle: {
       type: String,
-      enum: ["Active", "InActive"],
-      default: "InActive",
+      required: true,
+      trim: true,
     },
-
+    slug: {
+      type: String,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    images: {
+  type: [String],
+  default: [],
+},
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
     isDeleted: {
       type: Boolean,
       default: false,
