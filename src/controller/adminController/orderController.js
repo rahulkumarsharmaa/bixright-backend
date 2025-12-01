@@ -300,11 +300,11 @@ const updateStatus = async (req, res) => {
     }
 
     // Find order by orderId
-    const order = await Order.findOne({ orderId });
+    const order = await Order.findOne({ _id:orderId });
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-    
+
     let statusMap = {
       pending: "confirmed",
       confirmed: "shipped",

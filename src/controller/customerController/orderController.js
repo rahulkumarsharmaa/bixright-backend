@@ -39,8 +39,8 @@ exports.placeOrder = async (req, res) => {
 
       const cartItem = await cartModel.findOne({
         customerId: new mongoose.Types.ObjectId(customerId),
-        productId: new mongoose.Types.ObjectId(dbProduct.product._id),        
-        variantId:new mongoose.Types.ObjectId(item.variantId),
+        productId: new mongoose.Types.ObjectId(dbProduct.product._id),
+        variantId: new mongoose.Types.ObjectId(item.variantId),
         isDeleted: false,
       });
       if (cartItem) {
@@ -411,6 +411,67 @@ exports.getOrderById = async (req, res) => {
       success: false,
       message: "Server error while fetching order details",
       error: err.message,
+    });
+  }
+};
+
+exports.cancelOrder = async (req, res) => {
+  try {
+    const customerId = req.user.id;
+    const { orderId, remark } = req.body;
+
+    // Validation
+    if (!orderId || !customerId) {
+      return res.status(400).json({
+        message: "Both orderId and customerId are required",
+      });
+    }
+
+    // Find order
+    const order = await orderModel
+      .findOne({ _id: orderId })
+      .populate("customer", "_id");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Check if the order belongs to this customer
+    if (order.customer._id.toString() !== customerId.toString()) {
+      return res.status(403).json({
+        message: "Unauthorized — you can only cancel your own orders",
+      });
+    }
+
+    //  Check current order status
+    if (["cancelled", "delivered"].includes(order.orderStatus)) {
+      return res.status(400).json({
+        message: `Order cannot be cancelled as it is already ${order.orderStatus}`,
+      });
+    }
+
+    //  Cancel the order
+    order.orderStatus = "cancelled";
+    order.remark = remark || "Cancelled by customer";
+    order.isDeleted = true;
+    order.deletedAt = new Date();
+
+    await order.save();
+
+    return res.status(200).json({
+      message: "Order cancelled successfully!",
+      order: {
+        orderId: order.orderId,
+        orderStatus: order.orderStatus,
+        remark: order.remark,
+        deletedAt: order.deletedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error cancelling order:", error);
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
     });
   }
 };
