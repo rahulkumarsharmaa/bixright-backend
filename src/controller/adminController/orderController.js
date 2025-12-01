@@ -3,10 +3,22 @@ const Product = require("../../models/productModel");
 const Order = require("../../models/orderModel");
 const Supplier = require("../../models/supplierModel");
 const Customer = require("../../models/customerModel");
+const {
+  default: createCloudinaryStorage,
+} = require("multer-storage-cloudinary");
 
 const getOrderData = async (req, res) => {
   try {
-    const order = await Order.find()
+    const { status } = req.query;
+    
+    const filter = {};
+
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    const order = await Order.find(filter)
+      .sort({ createdAt: -1 })
       .populate("product.productId", "imageUrl title price")
       .populate("customer", "firstName lastName");
     if (!order) {
@@ -36,7 +48,7 @@ const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(id)
       .populate("product.productId", "images title price")
-      .populate('product.variantId', 'color size sku price' )
+      .populate("product.variantId", "color size sku price")
       .populate("customer", "firstName lastName email  address.city phone ");
     if (!order) {
       return res
@@ -230,13 +242,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "orderIds Missing" });
     }
 
-     const result = await Order.updateMany(
+    const result = await Order.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
-          deletedAt: new Date()
-        } 
+          deletedAt: new Date(),
+        },
       }
     );
 
