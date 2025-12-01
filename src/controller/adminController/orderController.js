@@ -290,14 +290,10 @@ const softDeleteOrder = async (req, res) => {
   }
 };
 
-const confirmOrder = async (req, res) => {
+const updateStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const {expectedDeliveryDate} = req.body;
-
-   if(!expectedDeliveryDate){
-    return res.status(400).json({ message: "expected delivery date is required" });
-   }
+    const { expectedDeliveryDate } = req.body;
 
     if (!orderId) {
       return res.status(400).json({ message: "Order ID is required" });
@@ -308,24 +304,35 @@ const confirmOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+    
+    let statusMap = {
+      pending: "confirmed",
+      confirmed: "shipped",
+      shipped: "delivered",
+    };
 
-    order.orderStatus = "confirmed";
-    order.expectedDeliveryDate = expectedDeliveryDate;
+    order.orderStatus = statusMap?.[order.orderStatus];
+
+    if (order?.orderStatus === "confirmed" && !expectedDeliveryDate) {
+      return res
+        .status(400)
+        .json({ message: "expected delivery date is required" });
+    }
+
+    if (order?.orderStatus === "confirmed")
+      order.expectedDeliveryDate = expectedDeliveryDate;
 
     await order.save();
 
     return res.status(200).json({
       message: "Order confirmed successfully!",
-      order: {
-        orderId: order.orderId,
-        orderStatus: order.orderStatus,
-        expectedDeliveryDate: order.expectedDeliveryDate,
-        updatedAt: order.updatedAt,
-      },
+      order,
     });
   } catch (error) {
-    console.error("Error confirming order:", error);
-    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    console.error("Error order status update:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 
@@ -337,5 +344,5 @@ module.exports = {
   deleteOrder,
   bulkDelete,
   softDeleteOrder,
-  confirmOrder,
+  updateStatus,
 };
