@@ -10,11 +10,11 @@ const {
 const getOrderData = async (req, res) => {
   try {
     const { status } = req.query;
-    
+
     const filter = {};
 
     if (status && status !== "all") {
-      filter.status = status;
+      filter.orderStatus = status;
     }
 
     const order = await Order.find(filter)
