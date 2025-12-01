@@ -99,6 +99,14 @@ const addStock = async (req, res) => {
     if (status === "in") {
       variant.quantity += Number(quantity);
     } else {
+      if (quantity > variant.quantity) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Quantity can not be more than Available stock",
+          });
+      }
       variant.quantity -= Number(quantity);
     }
 
@@ -192,13 +200,15 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "stockIds Missing" });
     }
 
-     const result = await Stock.updateMany(
+    console.log('ids', ids)
+
+    const result = await Stock.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
-          deletedAt: new Date()
-        } 
+          deletedAt: new Date(),
+        },
       }
     );
 

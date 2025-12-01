@@ -2,7 +2,7 @@ const Banner = require("../../models/bannerModel");
 const cloudinary = require("../../config/cloudinaryConfig");
 const getBannerData = async (req, res) => {
   try {
-    const banner = await Banner.find();
+    const banner = await Banner.find({isDeleted : false});
     if (!banner) {
       return res
         .status(404)

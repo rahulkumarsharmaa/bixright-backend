@@ -573,6 +573,7 @@ const updateProduct = async (req, res) => {
     // ---------- ADD NEW IMAGES ----------
     let pushData = {};
     if (req.files && req.files.length > 0) {
+      console.log('files', req.files);
       const uploadedImages = [];
       for (const file of req.files) {
         const result = await uploadToCloudinary(file.buffer);

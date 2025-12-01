@@ -1,7 +1,7 @@
 const Review = require("../../models/reviewModel");
 const getReviewData = async (req, res) => {
   try {
-    const review = await Review.find().populate('product', 'title').populate('customer', 'firstName lastName' );
+    const review = await Review.find({isDeleted : false}).populate('product', 'title').populate('customer', 'firstName lastName' );
     if (!review) {
       return res
         .status(404)
