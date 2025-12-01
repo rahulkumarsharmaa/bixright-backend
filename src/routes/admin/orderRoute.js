@@ -10,6 +10,6 @@ router.put('/update-order/:id', updateOrder )
 router.delete('/delete-order/:id', deleteOrder)
 router.delete('/soft-delete-order/:id', softDeleteOrder)
 router.delete('/bulk-delete', bulkDelete)
-router.post('/status-change/:orderId',updateStatus)
+router.patch('/status-change/:orderId',updateStatus)
 
 module.exports = router
