@@ -296,13 +296,13 @@ const updateStatus = async (req, res) => {
     const { expectedDeliveryDate } = req.body;
 
     if (!orderId) {
-      return res.status(400).json({ message: "Order ID is required" });
+      return res.status(400).json({ message: "Order ID is required",success:false });
     }
 
     // Find order by orderId
     const order = await Order.findOne({ _id:orderId });
     if (!order) {
-      return res.status(404).json({ message: "Order not found" });
+      return res.status(404).json({ message: "Order not found" ,success:false});
     }
 
     let statusMap = {
@@ -316,7 +316,7 @@ const updateStatus = async (req, res) => {
     if (order?.orderStatus === "confirmed" && !expectedDeliveryDate) {
       return res
         .status(400)
-        .json({ message: "expected delivery date is required" });
+        .json({ message: "expected delivery date is required",success:false });
     }
 
     if (order?.orderStatus === "confirmed")
@@ -327,12 +327,13 @@ const updateStatus = async (req, res) => {
     return res.status(200).json({
       message: "Order confirmed successfully!",
       order,
+      success:true
     });
   } catch (error) {
     console.error("Error order status update:", error);
     return res
       .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+      .json({ message: "Internal Server Error", error: error.message ,success:false});
   }
 };
 
