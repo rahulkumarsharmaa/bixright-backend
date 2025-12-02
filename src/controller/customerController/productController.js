@@ -14,6 +14,7 @@ exports.getActiveProducts = async (req, res) => {
       colorId,
       minPrice,
       maxPrice,
+      tagId,
     } = req.query;
 
     page = Number(page);
@@ -22,7 +23,7 @@ exports.getActiveProducts = async (req, res) => {
     // Base filter
 
     const filter = {
-      isActive:true,
+      isActive: true,
       isDeleted: false,
     };
 
@@ -36,8 +37,11 @@ exports.getActiveProducts = async (req, res) => {
       filter["subCategory.id"] = subCategoryId;
     }
 
+    if (tagId) {
+      filter["tags.id"] = tagId;
+    }
     // Filter by brandId
- if (brandId) {
+    if (brandId) {
       const brandIds = brandId
         .split(",")
         .filter((id) => mongoose.Types.ObjectId.isValid(id))
@@ -298,17 +302,23 @@ exports.fetchfilter = async (req, res) => {
   }
 };
 
-
 exports.getRecentlyAddedProducts = async (req, res) => {
   try {
-   
-    let { page = 1, limit = 10,brandId,sizeId,colorId,minPrice,maxPrice } = req.query;
+    let {
+      page = 1,
+      limit = 10,
+      brandId,
+      sizeId,
+      colorId,
+      minPrice,
+      maxPrice,
+    } = req.query;
     page = Number(page);
     limit = Number(limit);
-    let filter={isDeleted:false,isActive:true}
+    let filter = { isDeleted: false, isActive: true };
 
-        // Filter by brandId
- if (brandId) {
+    // Filter by brandId
+    if (brandId) {
       const brandIds = brandId
         .split(",")
         .filter((id) => mongoose.Types.ObjectId.isValid(id))
@@ -347,7 +357,6 @@ exports.getRecentlyAddedProducts = async (req, res) => {
       if (maxPrice) filter.basePrice.$lte = Number(maxPrice);
     }
 
-
     // Calculate skip for pagination
     const skip = (page - 1) * limit;
 
@@ -355,12 +364,12 @@ exports.getRecentlyAddedProducts = async (req, res) => {
     const products = await ProductModel.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit)
+      .limit(limit);
 
     // Get total count for pagination metadata
     const totalCount = await ProductModel.countDocuments(filter);
 
-      const formattedProducts = products.map((item) => {
+    const formattedProducts = products.map((item) => {
       const coverImage = item.images?.find((image) => image.isCover);
 
       return {

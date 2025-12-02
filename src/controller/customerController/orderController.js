@@ -192,7 +192,6 @@ exports.fetchOrders = async (req, res) => {
     if (status) {
       matchStage.orderStatus = status;
     }
-
     const pipeline = [
       { $match: matchStage },
 
@@ -236,6 +235,8 @@ exports.fetchOrders = async (req, res) => {
           totalAmount: { $first: "$totalAmount" },
           remark: { $first: "$remark" },
           createdAt: { $first: "$createdAt" },
+          expectedDeliveryDate: { $first: "$expectedDeliveryDate" },
+          deliveryDate: { $first: "$deliveryDate" },
           products: {
             $push: {
               productId: "$product.productId",
@@ -248,6 +249,24 @@ exports.fetchOrders = async (req, res) => {
               size: "$product.variantDetails.size",
               color: "$product.variantDetails.color",
               image: "$product.variantDetails.image",
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          startDeliveryDate: {
+            $dateSubtract: {
+              startDate: "$expectedDeliveryDate",
+              unit: "day",
+              amount: 2,
+            },
+          },
+          endDeliveryDate: {
+            $dateAdd: {
+              startDate: "$expectedDeliveryDate",
+              unit: "day",
+              amount: 2,
             },
           },
         },

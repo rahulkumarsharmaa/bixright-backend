@@ -17,7 +17,7 @@ exports.getActiveCategories = async (req, res) => {
 
     let categories;
     let total;
-    const projection = { title: 1, slug: 1, description: 1 };
+    const projection = { title: 1, slug: 1, description: 1, image: 1 };
 
     if (page === -1) {
       // Return all active categories
@@ -62,7 +62,7 @@ exports.getActiveSubCategories = async (req, res) => {
     page = Number(page);
     limit = Number(limit);
 
-    const filter = { isActive:true, isDeleted: false };
+    const filter = { isActive: true, isDeleted: false };
 
     if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
       filter["parentCategory.id"] = categoryId;
@@ -137,7 +137,7 @@ exports.getActiveBrands = async (req, res) => {
     limit = Number(limit);
 
     // Query only active brands
-    const filter = { isActive: true , isDeleted: false };
+    const filter = { isActive: true, isDeleted: false };
 
     let brands, totalBrands;
 

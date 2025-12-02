@@ -8,4 +8,5 @@ module.exports = (app) => {
   app.use(`${apiPrefix}/order`, require("./orderRoutes"));
   app.use(`${apiPrefix}/cart`, require("./cartRoute"));
   app.use(`${apiPrefix}/review`, require("./reviewsRoute"));
+  app.use(`${apiPrefix}/tags`, require("./tagRoute"));
 };
