@@ -170,7 +170,6 @@ exports.getProductById = async (req, res) => {
     const variants = await VariantModel.find({
       product: id,
       isDeleted: false,
-      isActive: true,
     }).select("_id sku size color price quantity image status");
 
     //  Format response for frontend
