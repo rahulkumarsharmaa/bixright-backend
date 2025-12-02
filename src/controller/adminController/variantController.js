@@ -7,12 +7,16 @@ const Variant = require("../../models/variantModel");
 const getVariantData = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id);
-    console.log(req.params);
-    const variant = await Variant.find({
-      product: id,
-      isDeleted: false,
-    }).populate("product", "title");
+    const { status } = req.query;
+
+    console.log(status);
+    const filter = { product: id, isDeleted: false };
+
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    const variant = await Variant.find(filter).populate("product", "title");
 
     if (!variant) {
       return res
@@ -165,7 +169,7 @@ const updateVariant = async (req, res) => {
       });
 
       variant.image = uploadResult.secure_url;
-      await variant.save()
+      await variant.save();
 
       // await Variant.updateMany(
       //   {product : variant.product ,  color : variant.color },
@@ -244,6 +248,7 @@ const bulkDelete = async (req, res) => {
 // Soft Delete
 const softDeleteVariant = async (req, res) => {
   try {
+    console.log("params", req.params);
     const variant = await Variant.findByIdAndUpdate(
       req.params.id,
       {

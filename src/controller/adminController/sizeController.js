@@ -1,7 +1,7 @@
 const Size = require("../../models/sizeModel");
 const getSizeData = async (req, res) => {
   try {
-    const size = await Size.find({isDeleted : false});
+    const size = await Size.find({ isDeleted: false });
     if (!size) {
       return res.status(404).json({ success: false, message: "No size Found" });
     }
@@ -47,8 +47,11 @@ const addSize = async (req, res) => {
     }
 
     const lowerTitle = title.toLowerCase();
+    const lowerCode = code.toLowerCase();
 
     const existingTitle = await Size.findOne({ title: lowerTitle });
+    const existingCode = await Size.findOne({ code: lowerCode });
+
     if (existingTitle) {
       return res.status(400).json({
         success: false,
@@ -56,15 +59,12 @@ const addSize = async (req, res) => {
       });
     }
 
-    // const lowerCode = code?.toLowerCase()
-
-    // const existingCode = await Size.findOne({code : lowerCode})
-    // if(existingCode){
-    //    return res.status(400).json({
-    //     success: false,
-    //     message: "Size Code Already Exist !",
-    //   });
-    // }
+    if (existingCode) {
+      return res.status(400).json({
+        success: false,
+        message: "Size Code Already Exist !",
+      });
+    }
 
     const size = new Size({
       title,
@@ -152,13 +152,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "SizeIds Missing" });
     }
 
-     const result = await Size.updateMany(
+    const result = await Size.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
-          deletedAt: new Date()
-        } 
+          deletedAt: new Date(),
+        },
       }
     );
 

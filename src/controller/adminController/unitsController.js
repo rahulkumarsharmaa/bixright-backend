@@ -1,7 +1,7 @@
 const Unit = require("../../models/unitsModel");
 const getUnitData = async (req, res) => {
   try {
-    const unit = await Unit.find();
+    const unit = await Unit.find({isDeleted : false});
     if (!unit) {
       return res.status(404).json({ success: false, message: "No Unit Found" });
     }

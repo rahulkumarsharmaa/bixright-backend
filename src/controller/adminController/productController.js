@@ -568,6 +568,9 @@ const updateProduct = async (req, res) => {
       updateData.color = colorData.map((c) => ({ id: c._id }));
     }
 
+
+      // ---------- TAG ----------
+
     if (tags) {
       const tagsArr = Array.isArray(tags) ? tags : tags.split(",");
       const tagsData = await Tag.find({ _id: { $in: tagsArr } });

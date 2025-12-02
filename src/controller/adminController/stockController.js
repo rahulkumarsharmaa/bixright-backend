@@ -29,14 +29,8 @@ const getStockById = async (req, res) => {
   console.log(id);
 
   try {
-    const stock = await Stock.findById(id);
-    if (!stock) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No stock Found" });
-    }
-
-    if (stock.isDeleted === true) {
+    const stock = await Stock.findById(id).populate('product', 'title').populate('variant', 'sku');
+    if (!stock || stock.isDeleted) {
       return res
         .status(404)
         .json({ success: false, message: "No stock Found" });
@@ -55,7 +49,7 @@ const addStock = async (req, res) => {
   try {
     console.log("add", req.body);
 
-    const { product, productVariant, quantity, reason, note, status } =
+    const { product, productVariant, quantity, status } =
       req.body;
 
     if (!product || !quantity || !productVariant) {
@@ -114,9 +108,8 @@ const addStock = async (req, res) => {
 
     const stock = new Stock({
       product,
+      productVariant,
       quantity,
-      reason,
-      note,
       status,
     });
 

@@ -43,7 +43,7 @@ const variantSchema = new mongoose.Schema({
 
   image: {
     type: String,
-    default : null
+    default: null,
   },
 
   status: {
@@ -62,17 +62,45 @@ const variantSchema = new mongoose.Schema({
   // },
 });
 
-variantSchema.pre("validate", function (next) {
-  if (this.sku) return next();
+variantSchema.pre("findOneAndUpdate", function (next) {
+  this.setOptions({ runValidators: true });
+  next();
+});
 
-  if (!this.color || !this.size) {
-    return next(new Error("Color and size are required to generate SKU"));
+
+variantSchema.pre(["save", "findOneAndUpdate"], function (next) {
+  let data = this;
+
+  // For findOneAndUpdate, the data is inside getUpdate()
+  if (this.getUpdate) {
+    data = this.getUpdate();
   }
 
-  const randomCode = crypto.randomBytes(2).toString("hex").toUpperCase();
+  const qty = data.quantity;
 
-  this.sku = `${this.color}-${this.size}-${randomCode}`.toUpperCase();
+  if (qty !== undefined) {
+    if (qty <= 0) data.status = "outofstock";
+    else if (qty <= 10) data.status = "lowstock";
+    else data.status = "instock";
 
+
+    if (this.getUpdate) {
+      this.setUpdate(data);
+    }
+  }
+
+  next();
+});
+
+
+variantSchema.pre("save", function (next) {
+  if (this.quantity <= 0) {
+    this.status = "outofstock";
+  } else if (this.quantity <= 10) {
+    this.status = "lowstock";
+  } else {
+    this.status = "instock";
+  }
   next();
 });
 
