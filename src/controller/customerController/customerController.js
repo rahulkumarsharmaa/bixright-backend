@@ -35,6 +35,24 @@ exports.customerSignup = async (req, res) => {
       });
     }
 
+    // validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email",
+      });
+    }
+
+    //  Validate phone format ( 10-digit validation)
+    const phoneRegex = /^[6-9]\d{9}$/; 
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid phone number",
+      });
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hashPassword(password);
 
