@@ -4,6 +4,7 @@ const transactionModel = require("../../models/transactionModel");
 const couponModel = require("../../models/couponModel");
 const mongoose = require("mongoose");
 const cartModel = require("../../models/cartModel");
+const policyModel = require("../../models/policyModel");
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -81,6 +82,15 @@ exports.placeOrder = async (req, res) => {
     const shippingCharge = 0;
     const totalAmount = subTotal + taxAmount + shippingCharge;
 
+    const daysToAdd = await policyModel.findOne(
+      { isActive: true, isDeleted: false },
+      { deliveryWithinDays: 1 }
+    );
+    const today = new Date();
+    const expectedDeliveryDate = new Date(today);
+    expectedDeliveryDate.setDate(
+      today.getDate() + (daysToAdd?.deliveryWithinDays || 7)
+    );
     //  Create order
     const order = await orderModel.create({
       customer: customerId,
@@ -88,10 +98,12 @@ exports.placeOrder = async (req, res) => {
       billingAddress,
       shippingAddress,
       paymentMethod,
+      orderStatus: "confirmed",
       subTotal,
       taxAmount,
       shippingCharge,
       totalAmount,
+      expectedDeliveryDate,
     });
 
     //  Create transaction entry (optional if not COD)
@@ -472,8 +484,6 @@ exports.cancelOrder = async (req, res) => {
     //  Cancel the order
     order.orderStatus = "cancelled";
     order.remark = remark || "Cancelled by customer";
-    order.isDeleted = true;
-    order.deletedAt = new Date();
 
     await order.save();
 

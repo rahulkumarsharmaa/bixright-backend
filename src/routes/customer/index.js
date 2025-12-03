@@ -9,4 +9,6 @@ module.exports = (app) => {
   app.use(`${apiPrefix}/cart`, require("./cartRoute"));
   app.use(`${apiPrefix}/review`, require("./reviewsRoute"));
   app.use(`${apiPrefix}/tags`, require("./tagRoute"));
+  app.use(`${apiPrefix}/policy`, require("./policyRoute"));
+  app.use(`${apiPrefix}/site-setting`, require("./siteSettingRoutes"));
 };

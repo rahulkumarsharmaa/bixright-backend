@@ -58,5 +58,7 @@ router.use("/unit", unitsRoute);
 router.use("/variant", variantRoute);
 router.use("/user", userRoute);
 router.use("/pincodes", require("./pincodeRoute"));
+router.use("/policy",require("./policyRoutes"))
+router.use("/site-setting",require("./siteSettingRoute"))
 
 module.exports = router
