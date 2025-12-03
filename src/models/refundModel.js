@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const refundSchema = new mongoose.Schema(
   {
-    orderId: {
+    order: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
       required: true,
@@ -15,9 +15,9 @@ const refundSchema = new mongoose.Schema(
     refundedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
     refundedItems: [
       {
-        productId: {
+        variantId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
+          ref: "Variant",
           required: true,
         },
         quantity: { type: Number },
@@ -27,11 +27,13 @@ const refundSchema = new mongoose.Schema(
 
     totalRefund: { type: Number, required: true },
     reason: { type: String },
+
     refundStatus: {
       type: String,
-      enum: ["requested", "approved", "rejected", "processed"],
-      default: "requested",
+      enum: ["pending", "approved", "rejected", "processed"],
+      default: "pending",
     },
+
     paymentMethod: { type: String }, // cash, card, etc.
     transactionId: { type: String },
     remark: { type: String },

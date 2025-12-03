@@ -49,7 +49,7 @@ const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(id)
       .populate("product.productId", "images title price")
-      .populate("product.variantId", "color size sku price")
+      .populate("product.variantId", "color size sku price image")
       .populate("customer", "firstName lastName email  address.city phone ");
     if (!order) {
       return res
