@@ -137,7 +137,7 @@ const updateVariant = async (req, res) => {
         .status(400)
         .json({ success: false, message: "variantId Missing" });
     }
-    const variant = await Variant.findById(variantId);
+    let variant = await Variant.findById(variantId);
 
     if (!variant) {
       return res
@@ -145,7 +145,7 @@ const updateVariant = async (req, res) => {
         .json({ success: false, message: "Variant not found" });
     }
 
-    const product = await ProductModel.findById(variant.product);
+    const product = await Product.findById(variant.product);
 
     let discountPercentage = product.discount || 0;
     let discountedPrice = Math.round(
