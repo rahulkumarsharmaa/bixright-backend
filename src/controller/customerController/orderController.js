@@ -64,7 +64,7 @@ exports.placeOrder = async (req, res) => {
       }
 
       // You can fetch variant price from dbProduct.variants if needed
-      const price = dbProduct.price || item.price || 0;
+      const price = dbProduct.discountedPrice || item.discountedPrice || 0;
 
       populatedProducts.push({
         productId: dbProduct.product._id,
@@ -79,18 +79,19 @@ exports.placeOrder = async (req, res) => {
     //  Calculate summary
     const subTotal = populatedProducts.reduce((sum, i) => sum + i.total, 0);
     // const taxAmount = +(subTotal * 0.18).toFixed(2);
-    const taxAmount=0
-    const shippingCharge = 0;
+    const taxAmount = 0;
+    const policy = await policyModel.findOne({
+      isActive: true,
+      isDeleted: false,
+    });
+    const shippingCharge =
+      subTotal > policy.minFreeShippingAmount ? 0 : policy.shippingCharge;
     const totalAmount = subTotal + taxAmount + shippingCharge;
 
-    const daysToAdd = await policyModel.findOne(
-      { isActive: true, isDeleted: false },
-      { deliveryWithinDays: 1 }
-    );
     const today = new Date();
     const expectedDeliveryDate = new Date(today);
     expectedDeliveryDate.setDate(
-      today.getDate() + (daysToAdd?.deliveryWithinDays || 7)
+      today.getDate() + (policy?.deliveryWithinDays || 7)
     );
     //  Create order
     const order = await orderModel.create({
@@ -109,7 +110,7 @@ exports.placeOrder = async (req, res) => {
 
     //  Create transaction entry (optional if not COD)
     let transaction = null;
-    if (paymentMethod !== "cash") {
+    if (paymentMethod !== "cash" || paymentMethod !== "cod") {
       transaction = await transactionModel.create({
         orderId: order._id,
         customerId: customerId,
@@ -476,7 +477,7 @@ exports.cancelOrder = async (req, res) => {
     }
 
     //  Check current order status
-    if (["cancelled", "delivered"].includes(order.orderStatus)) {
+    if (["cancelled", "delivered","shipped"].includes(order.orderStatus)) {
       return res.status(400).json({
         message: `Order cannot be cancelled as it is already ${order.orderStatus}`,
       });

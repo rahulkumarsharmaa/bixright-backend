@@ -326,6 +326,7 @@ const addProduct = async (req, res) => {
           imageId: result.public_id,
           isCover: i === 0,
         });
+        
       }
     }
 
