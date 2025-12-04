@@ -9,7 +9,9 @@ exports.addToCart = async (req, res) => {
 
     // Validate input
     if (!customerId || !productId || !variantId) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ message: "Missing required fields", success: false });
     }
 
     // Check if same product/variant already exists for this customer
@@ -27,6 +29,7 @@ exports.addToCart = async (req, res) => {
       return res.status(200).json({
         message: "Cart item quantity updated",
         data: existingItem,
+        success: true,
       });
     }
 
@@ -41,12 +44,14 @@ exports.addToCart = async (req, res) => {
     return res.status(201).json({
       message: "Item added to cart successfully",
       data: newCartItem,
+      success: true,
     });
   } catch (error) {
     console.error("Add to cart error:", error);
     return res.status(500).json({
       message: "Server error while adding to cart",
       error: error.message,
+      success: false,
     });
   }
 };
@@ -146,7 +151,9 @@ exports.updateCart = async (req, res) => {
     const { productId, variantId, action } = req.body;
 
     if (!customerId || !productId || !variantId || !action) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res
+        .status(400)
+        .json({ message: "Missing required fields", success: false });
     }
 
     // Validate action
@@ -165,25 +172,28 @@ exports.updateCart = async (req, res) => {
     });
 
     if (!cartItem) {
-      return res.status(404).json({ message: "Cart item not found" });
+      return res
+        .status(404)
+        .json({ message: "Cart item not found", success: false });
     }
 
     // Update quantity based on action
     if (action === "increase") {
-      if(cartItem.quantity>=10){
-        return res.status(400).json({ message: "You cannot add more than 10 items" });
-      }
-      else{
+      if (cartItem.quantity >= 10) {
+        return res.status(400).json({
+          message: "You cannot add more than 10 items",
+          success: false,
+        });
+      } else {
         cartItem.quantity += 1;
       }
-      
     } else if (action === "decrease") {
       if (cartItem.quantity > 1) {
         cartItem.quantity -= 1;
       } else {
         return res
           .status(400)
-          .json({ message: "Quantity cannot be less than 1" });
+          .json({ message: "Quantity cannot be less than 1", success: false });
       }
     } else if (action === "delete") {
       cartItem.isDeleted = true;
@@ -195,12 +205,14 @@ exports.updateCart = async (req, res) => {
     return res.status(200).json({
       message: "Cart quantity updated successfully",
       data: cartItem,
+      success: true,
     });
   } catch (error) {
     console.error("Error updating cart quantity:", error);
     return res.status(500).json({
       message: "Server error while updating cart quantity",
       error: error.message,
+      success: false,
     });
   }
 };

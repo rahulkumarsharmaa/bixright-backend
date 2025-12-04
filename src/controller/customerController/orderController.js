@@ -78,7 +78,8 @@ exports.placeOrder = async (req, res) => {
 
     //  Calculate summary
     const subTotal = populatedProducts.reduce((sum, i) => sum + i.total, 0);
-    const taxAmount = +(subTotal * 0.18).toFixed(2);
+    // const taxAmount = +(subTotal * 0.18).toFixed(2);
+    const taxAmount=0
     const shippingCharge = 0;
     const totalAmount = subTotal + taxAmount + shippingCharge;
 
