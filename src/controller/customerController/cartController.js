@@ -103,6 +103,8 @@ exports.getCartByCustomer = async (req, res) => {
           productId: "$product._id",
           title: "$product.title",
           price: "$variant.price",
+          discountedPrice: "$variant.discountedPrice",
+          discount: "$product.discount",
           images: "$product.images",
           image: "$variant.image",
           brandName: "$product.brand.name",

@@ -76,8 +76,8 @@ exports.getActiveProducts = async (req, res) => {
 
     if (minPrice || maxPrice) {
       filter.basePrice = {};
-      if (minPrice) filter.basePrice.$gte = Number(minPrice);
-      if (maxPrice) filter.basePrice.$lte = Number(maxPrice);
+      if (minPrice) filter.discountedPrice.$gte = Number(minPrice);
+      if (maxPrice) filter.discountedPrice.$lte = Number(maxPrice);
     }
 
     let products = [];
@@ -88,7 +88,7 @@ exports.getActiveProducts = async (req, res) => {
       products = await ProductModel.find(filter)
         .sort({ createdAt: -1 })
         .select(
-          "title subTitle description price discount category.id category.name subCategory.id subCategory.name size.id size.name brand.id brand.name quantity images isActive isVisible createdAt updatedAt"
+          "title subTitle description price discount category.id category.name subCategory.id subCategory.name size.id size.name brand.id brand.name quantity images isActive isVisible createdAt updatedAt discount discountedPrice"
         );
       total = products.length;
     } else {
@@ -101,7 +101,7 @@ exports.getActiveProducts = async (req, res) => {
           .skip(skip)
           .limit(limit)
           .select(
-            "title subTitle description category.id category.name subCategory.id subCategory.name size brand.id brand.name quantity images isActive basePrice"
+            "title subTitle description category.id category.name subCategory.id subCategory.name size brand.id brand.name quantity images isActive basePrice discount discountedPrice"
           ),
         ProductModel.countDocuments(filter),
       ]);
@@ -124,6 +124,8 @@ exports.getActiveProducts = async (req, res) => {
         brandId: item.brand?.id || null,
         brandName: item.brand?.name || null,
         images: [coverImage] || null,
+        discount: item.discount,
+        discountedPrice: item.discountedPrice,
       };
     });
 
@@ -170,7 +172,7 @@ exports.getProductById = async (req, res) => {
     const variants = await VariantModel.find({
       product: id,
       isDeleted: false,
-    }).select("_id sku size color price quantity image status");
+    }).select("_id sku size color price quantity image status discountedPrice");
 
     //  Format response for frontend
     const formattedProduct = {
@@ -186,6 +188,8 @@ exports.getProductById = async (req, res) => {
       brandId: product.brand?.id || null,
       brandName: product.brand?.name || null,
       images: product.images || [],
+      discount: product.discount,
+      discountedPrice: product.discountedPrice,
       variants,
     };
 
@@ -276,7 +280,7 @@ exports.fetchfilter = async (req, res) => {
     });
 
     // --- Calculate min and max price ---
-    const prices = products.map((p) => p.basePrice);
+    const prices = products.map((p) => p.discountedPrice || p.basePrice);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
 
@@ -353,9 +357,9 @@ exports.getRecentlyAddedProducts = async (req, res) => {
     }
 
     if (minPrice || maxPrice) {
-      filter.basePrice = {};
-      if (minPrice) filter.basePrice.$gte = Number(minPrice);
-      if (maxPrice) filter.basePrice.$lte = Number(maxPrice);
+      filter.discountedPrice = {};
+      if (minPrice) filter.discountedPrice.$gte = Number(minPrice);
+      if (maxPrice) filter.discountedPrice.$lte = Number(maxPrice);
     }
 
     // Calculate skip for pagination
@@ -379,6 +383,8 @@ exports.getRecentlyAddedProducts = async (req, res) => {
         subTitle: item.subTitle,
         description: item.description,
         basePrice: item.basePrice,
+        discount: item.discount,
+        discountedPrice: item.discountedPrice,
         categoryId: item.category?.id || null,
         categoryName: item.category?.name || null,
         subCategoryId: item.subCategory?.id || null,
