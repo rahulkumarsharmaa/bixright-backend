@@ -26,6 +26,7 @@ const generateProductVariants = async (product) => {
         size: s.title,
         sku: `${c.title}-${s.title}-${randomCode}`,
         price: product.basePrice,
+        discountedPrice: product.discountedPrice,
         quantity: 0,
         status: "instock",
       });
