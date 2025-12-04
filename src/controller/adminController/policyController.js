@@ -73,7 +73,7 @@ exports.getPolicy = async (req, res) => {
         .status(404)
         .json({ success: false, message: "No policy found" });
 
-    res.status(200).json({ success: true, message: "Policy Fetched", policy });
+    res.status(200).json({ success: true, message : 'Policy Fetched', policy });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
