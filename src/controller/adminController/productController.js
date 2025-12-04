@@ -245,12 +245,13 @@ const addProduct = async (req, res) => {
       !category ||
       !size ||
       !color ||
-      !brand
+      !brand ||
+      !discount
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Details Missing: Please provide title, description, price, category, size, color, and brand.",
+          "Details Missing: Please provide title, description, price, discount, category, size, color, and brand.",
       });
     }
 
@@ -328,6 +329,11 @@ const addProduct = async (req, res) => {
       }
     }
 
+    let discountPercentage = discount || 0;
+    let discountedPrice = Math.round(
+      basePrice * (1 - (discountPercentage || 0) / 100)
+    );
+
     // Prepare product document
     const product = new Product({
       title,
@@ -341,6 +347,8 @@ const addProduct = async (req, res) => {
       color: colorData.map((c) => ({ id: c._id })),
       tags: tagData.map((t) => ({ id: t._id, name: t.title })),
       images: productImages,
+      discount: discountPercentage,
+      discountedPrice: discountedPrice,
     });
 
     // Generate product variants

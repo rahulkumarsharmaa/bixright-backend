@@ -24,6 +24,10 @@ const productSchema = new mongoose.Schema(
       max: 100,
       default: 0,
     },
+    discountedPrice: {
+      type: Number,
+      default: this.basePrice,
+    },
     brand: {
       id: {
         type: mongoose.Schema.Types.ObjectId,

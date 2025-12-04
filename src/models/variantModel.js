@@ -40,6 +40,10 @@ const variantSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  discountedPrice:{
+    type:Number,
+    default:this.price,
+  },
 
   image: {
     type: String,
