@@ -233,6 +233,7 @@ const addProduct = async (req, res) => {
       size,
       color,
       basePrice,
+      discount,
       tags,
     } = req.body;
 
@@ -291,15 +292,14 @@ const addProduct = async (req, res) => {
         .status(400)
         .json({ success: false, message: "One or more colors are invalid" });
 
-        let tagData=[]
-        if(tags){
-
-           tagData = await Tag.find({ _id: { $in: tagsArr } });
-          if (tagData.length !== tagsArr.length)
-            return res
+    let tagData = [];
+    if (tags) {
+      tagData = await Tag.find({ _id: { $in: tagsArr } });
+      if (tagData.length !== tagsArr.length)
+        return res
           .status(400)
           .json({ success: false, message: "One or more tags are invalid" });
-        }
+    }
 
     // Handle image uploads
     const productImages = [];
@@ -481,6 +481,7 @@ const uploadToCloudinary = (fileBuffer) => {
 
 const updateProduct = async (req, res) => {
   console.log("body", req.body);
+  console.log("discount", req.body.discount);
   try {
     const productId = req.params.id;
     if (!productId) {
@@ -494,6 +495,7 @@ const updateProduct = async (req, res) => {
       subTitle,
       description,
       basePrice,
+      discount,
       brand,
       category,
       subCategory,
@@ -513,6 +515,7 @@ const updateProduct = async (req, res) => {
     if (subTitle) updateData.subTitle = subTitle;
     if (description) updateData.description = description;
     if (basePrice) updateData.basePrice = basePrice;
+    if (discount) updateData.discount = discount;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (typeof isVisible !== "undefined") updateData.isVisible = isVisible;
 
@@ -568,8 +571,7 @@ const updateProduct = async (req, res) => {
       updateData.color = colorData.map((c) => ({ id: c._id }));
     }
 
-
-      // ---------- TAG ----------
+    // ---------- TAG ----------
 
     if (tags) {
       const tagsArr = Array.isArray(tags) ? tags : tags.split(",");
