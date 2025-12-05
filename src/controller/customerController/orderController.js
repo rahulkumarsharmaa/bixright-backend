@@ -189,7 +189,7 @@ exports.fetchOrders = async (req, res) => {
     const customerId = req.user.id;
 
     const { status } = req.query;
-
+    
     // Validate Customer ID
     if (!customerId || !mongoose.Types.ObjectId.isValid(customerId)) {
       return res.status(400).json({
@@ -291,6 +291,7 @@ exports.fetchOrders = async (req, res) => {
     ];
 
     const orders = await orderModel.aggregate(pipeline);
+    // console.log(orders, "ppppppp");
 
     if (!orders.length) {
       return res.status(404).json({
@@ -477,7 +478,7 @@ exports.cancelOrder = async (req, res) => {
     }
 
     //  Check current order status
-    if (["cancelled", "delivered","shipped"].includes(order.orderStatus)) {
+    if (["cancelled", "delivered", "shipped"].includes(order.orderStatus)) {
       return res.status(400).json({
         message: `Order cannot be cancelled as it is already ${order.orderStatus}`,
       });

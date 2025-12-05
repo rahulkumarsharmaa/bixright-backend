@@ -52,7 +52,7 @@ const siteSettingsSchema = new mongoose.Schema(
       default: "© 2025 Kalbeliya. All rights reserved. | Crafted with camlenio",
     },
   },
-  { timestamps: true }
+  { timestamps: true, versionKey: false }
 );
 
 module.exports = mongoose.model("SiteSettings", siteSettingsSchema);

@@ -11,4 +11,5 @@ module.exports = (app) => {
   app.use(`${apiPrefix}/tags`, require("./tagRoute"));
   app.use(`${apiPrefix}/policy`, require("./policyRoute"));
   app.use(`${apiPrefix}/site-setting`, require("./siteSettingRoutes"));
+    app.use(`${apiPrefix}/popup`, require("./popupRoute"));
 };

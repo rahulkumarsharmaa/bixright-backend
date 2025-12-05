@@ -38,7 +38,6 @@ exports.upsertSiteSettings = async (req, res) => {
       const result = await uploadToCloudinary(file.buffer);
       logoUrl = result.secure_url;
     }
-
     if (req.files?.favicon?.[0]) {
       const favicon = req.files.favicon[0];
       const result = await uploadToCloudinary(favicon.buffer);
