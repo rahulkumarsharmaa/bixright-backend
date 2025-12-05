@@ -21,7 +21,7 @@ const getOrderData = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate("product.productId", "imageUrl title price")
       .populate("customer", "firstName lastName");
-      
+
     if (!order) {
       return res.status(404).json({ success: false, message: "No Order Yet" });
     }
@@ -294,16 +294,36 @@ const softDeleteOrder = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { expectedDeliveryDate } = req.body;
+    console.log(req.body);
+    const { courierCompany, trackingNumber, deliveryDate } = req.body;
+
+    const expectedDeliveryDate = deliveryDate;
 
     if (!orderId) {
-      return res.status(400).json({ message: "Order ID is required",success:false });
+      return res
+        .status(400)
+        .json({ success: false, message: "Order ID is required" });
     }
 
     // Find order by orderId
-    const order = await Order.findOne({ _id:orderId });
+    const order = await Order.findOne({ _id: orderId });
     if (!order) {
-      return res.status(404).json({ message: "Order not found" ,success:false});
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+
+    if (trackingNumber) {
+      const isTrackingNumberExist = await Order.findOne({
+        trackingNumber: trackingNumber.toUpperCase(),
+        _id: { $ne: orderId },
+      });
+
+      if (isTrackingNumberExist) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Tracking Number already in use" });
+      }
     }
 
     let statusMap = {
@@ -314,27 +334,39 @@ const updateStatus = async (req, res) => {
 
     order.orderStatus = statusMap?.[order.orderStatus];
 
-    if (order?.orderStatus === "confirmed" && !expectedDeliveryDate) {
+    if (
+      order?.orderStatus === "shipped" &&
+      (!expectedDeliveryDate || !trackingNumber || !courierCompany)
+    ) {
       return res
         .status(400)
-        .json({ message: "expected delivery date is required",success:false });
+        .json({ success: false, message: "Shipping Details required" });
     }
 
-    if (order?.orderStatus === "confirmed")
+    if (order?.orderStatus === "confirmed") {
       order.expectedDeliveryDate = expectedDeliveryDate;
+    }
+
+    if (order?.orderStatus === "shipped") {
+      (order.courierCompany = courierCompany),
+        (order.trackingNumber = trackingNumber),
+        (order.expectedDeliveryDate = expectedDeliveryDate);
+    }
 
     await order.save();
 
     return res.status(200).json({
       message: "Order confirmed successfully!",
       order,
-      success:true
+      success: true,
     });
   } catch (error) {
     console.error("Error order status update:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message ,success:false});
+    return res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+      success: false,
+    });
   }
 };
 

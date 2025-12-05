@@ -85,7 +85,7 @@ const orderSchema = new mongoose.Schema(
         "delivered",
         "cancelled",
       ],
-      default: "pending",
+      default: "confirmed",
     },
 
     isDeleted: {
@@ -96,14 +96,31 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    expectedDeliveryDate:{
-      type:Date,
-      default:null
+    expectedDeliveryDate: {
+      type: Date,
+      default: null,
     },
-    deliveryDate:{
-      type:Date,
-      default:null
+    deliveryDate: {
+      type: Date,
+      default: null,
     },
+    trackingNumber : {
+      type: String,
+      uppercase: true,
+      unique: true,
+      trim: true,
+      default: "",
+    },
+    // courierCompany: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "Courier_Company",
+    // },
+
+    courierCompany: {
+      type: String,
+      default: "",
+    },
+
     // Financial Summary (auto-calculated)
     subTotal: { type: Number, required: true, default: 0 },
     taxAmount: { type: Number, default: 0 },

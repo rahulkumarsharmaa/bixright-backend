@@ -1,5 +1,5 @@
 const authorizeUser =
-  (...roles) =>
+  (roles = []) =>
   (req, res, next) => {
     try {
       if (!req.user) {

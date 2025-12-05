@@ -11,17 +11,16 @@ const initiateRefund = async (req, res) => {
 
 const getRefundData = async (req, res) => {
   try {
-    const {status} = req.query
-    console.log('status', status)
-    const filter = {}
-    if(status !== 'all'){
-      filter.refundStatus = status
+    const { status } = req.query;
+    console.log("status", status);
+    const filter = {};
+    if (status !== "all") {
+      filter.refundStatus = status;
     }
-    console.log(filter)
-    const refunds = await Refund.find(filter).populate(
-      "customer",
-      "firstName lastName email phone"
-    ).populate('order', 'orderId');
+    console.log(filter);
+    const refunds = await Refund.find(filter)
+      .populate("customer", "firstName lastName email phone")
+      .populate("order", "orderId");
 
     if (!refunds) {
       return res.status(404).json({
@@ -69,6 +68,19 @@ const getRefundById = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+const updateRefund = async (req, res) => {
+  try {
+    const {id} = req.params;
+    console.log(id)
+
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const softDeleteRefund = async (req, res) => {
   try {
   } catch (error) {
@@ -81,5 +93,6 @@ module.exports = {
   initiateRefund,
   getRefundData,
   getRefundById,
+  updateRefund,
   softDeleteRefund,
 };
