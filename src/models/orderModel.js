@@ -64,7 +64,7 @@ const orderSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["cash", "cod", "credit-card", "upi", "bank-transfer"],
+      enum: ["cash", "cod", "card", "upi", "bank-transfer"],
       default: "cod",
     },
 
@@ -104,7 +104,7 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    trackingNumber : {
+    trackingNumber: {
       type: String,
       uppercase: true,
       unique: true,
