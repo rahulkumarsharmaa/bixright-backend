@@ -189,7 +189,7 @@ exports.fetchOrders = async (req, res) => {
     const customerId = req.user.id;
 
     const { status } = req.query;
-    
+
     // Validate Customer ID
     if (!customerId || !mongoose.Types.ObjectId.isValid(customerId)) {
       return res.status(400).json({
@@ -251,6 +251,8 @@ exports.fetchOrders = async (req, res) => {
           createdAt: { $first: "$createdAt" },
           expectedDeliveryDate: { $first: "$expectedDeliveryDate" },
           deliveryDate: { $first: "$deliveryDate" },
+          courierCompany:{$first:"$courierCompany"},
+          trackingNumber:{$first:"$trackingNumber"},          
           products: {
             $push: {
               productId: "$product.productId",
@@ -291,7 +293,6 @@ exports.fetchOrders = async (req, res) => {
     ];
 
     const orders = await orderModel.aggregate(pipeline);
-    // console.log(orders, "ppppppp");
 
     if (!orders.length) {
       return res.status(404).json({
