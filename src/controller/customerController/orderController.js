@@ -251,6 +251,8 @@ exports.fetchOrders = async (req, res) => {
           createdAt: { $first: "$createdAt" },
           expectedDeliveryDate: { $first: "$expectedDeliveryDate" },
           deliveryDate: { $first: "$deliveryDate" },
+          courierCompany:{$first:"$courierCompany"},
+          trackingNumber:{$first:"$trackingNumber"},          
           products: {
             $push: {
               productId: "$product.productId",
@@ -477,7 +479,7 @@ exports.cancelOrder = async (req, res) => {
     }
 
     //  Check current order status
-    if (["cancelled", "delivered","shipped"].includes(order.orderStatus)) {
+    if (["cancelled", "delivered", "shipped"].includes(order.orderStatus)) {
       return res.status(400).json({
         message: `Order cannot be cancelled as it is already ${order.orderStatus}`,
       });
