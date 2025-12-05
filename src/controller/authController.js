@@ -1,10 +1,11 @@
-const Admin = require("../models/adminUserModel");
+const User = require("../models/userModel");
 const { hashPassword, comparePassword } = require("../utils/bcrypt");
 const { generateToken } = require("../utils/jwt");
 const axios = require("axios");
 
 const register = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  console.log(req.body);
+  const { name, email, password, role, phone } = req.body;
 
   try {
     if (!name || !email || !password || !role) {
@@ -13,7 +14,7 @@ const register = async (req, res) => {
         .json({ success: false, message: "Details Missing" });
     }
 
-    const existing = await Admin.findOne({ email });
+    const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({
         success: false,
@@ -23,11 +24,12 @@ const register = async (req, res) => {
 
     const hashedPassword = await hashPassword(password);
     console.log(hashedPassword);
-    const admin = new Admin({
+    const admin = new User({
       name,
       email,
       password: hashedPassword,
       role,
+      phone,
     });
 
     await admin.save();
@@ -45,6 +47,7 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   const { email, password } = req.body;
+  console.log(req.body);
 
   const getIP = (req) =>
     req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
@@ -56,10 +59,10 @@ const login = async (req, res) => {
         .json({ success: false, message: "Details Missing" });
     }
 
-    const existingUser = await Admin.findOne({ email });
+    const existingUser = await User.findOne({ email });
 
     if (!existingUser) {
-      res
+      return res
         .status(400)
         .json({ success: false, message: "Invalid Credentials !" });
     }
@@ -68,9 +71,15 @@ const login = async (req, res) => {
     const checkPass = await comparePassword(password, hashedPassword);
 
     if (!checkPass) {
-      res
+      return res
         .status(400)
         .json({ success: false, message: "Invalid Credentials !" });
+    }
+
+    console.log('existingUser' , existingUser)
+
+    if (existingUser?.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Forbidden !" });
     }
 
     const payload = {
@@ -93,7 +102,7 @@ const login = async (req, res) => {
 
     // 3️⃣ Get approximate location
     const loc = await axios.get(`https://ipapi.co/${ip}/json/`);
-    console.log(loc)
+    console.log(loc);
     const locationData = {
       ip,
       city: loc.data.city,
@@ -110,7 +119,7 @@ const login = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Login Successful !", token });
   } catch (error) {
-    res
+    return res
       .status(error.status || 500)
       .json({ success: false, message: error.message });
   }
@@ -119,7 +128,7 @@ const login = async (req, res) => {
 const getMyProfile = async (req, res) => {
   try {
     console.log("My profile", req.user);
-    const user = await Admin.findById(req.user);
+    const user = await User.findById(req.user);
 
     if (!user) {
       return res

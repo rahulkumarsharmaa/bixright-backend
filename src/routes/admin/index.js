@@ -10,6 +10,7 @@ const brandRoute = require("./brandRoute");
 const categoryRoute = require("./categoryRoute");
 const colorRoute = require("./colorRoute");
 const couponRoute = require("./couponRoute");
+const courierCompanyRoute = require("./courierCompanyRoute");
 const customerRoute = require("./customerRoute");
 const dashboardRoute = require("./dashboardRoute");
 const kycRoute = require("./kycRoute");
@@ -29,8 +30,8 @@ const unitsRoute = require("./unitsRoute");
 const variantRoute = require("./variantRoute");
 const userRoute = require("./userRoute");
 
-
 router.use(authenticateUser)
+router.use(authorizeUser(['admin']))
 
 router.use("/attribute", attributeRoute);
 router.use("/setting", adminPanelSettingRoute);
@@ -38,6 +39,7 @@ router.use("/brand", brandRoute);
 router.use("/banner", bannerRoute);
 router.use("/category", categoryRoute);
 router.use("/color", colorRoute);
+router.use("/courier-company", courierCompanyRoute);
 router.use("/coupon", couponRoute);
 router.use("/customer", customerRoute);
 router.use("/dashboard", dashboardRoute);
