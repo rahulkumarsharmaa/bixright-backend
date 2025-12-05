@@ -295,9 +295,15 @@ const updateStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
     console.log(req.body);
-    const { courierCompany, trackingNumber, deliveryDate } = req.body;
 
-    const expectedDeliveryDate = deliveryDate;
+    const {
+      courierCompany,
+      trackingNumber,
+      deliveryDate,
+      expectedDeliveryDate,
+    } = req.body;
+
+    // const expectedDeliveryDate = deliveryDate;
 
     if (!orderId) {
       return res
@@ -353,10 +359,17 @@ const updateStatus = async (req, res) => {
         (order.expectedDeliveryDate = expectedDeliveryDate);
     }
 
+    if (order?.orderStatus === "delivered") {
+      order.deliveryDate = deliveryDate;
+      if (order.paymentMethod !== "paid") {
+        order.paymentStatus = "paid";
+      }
+    }
+
     await order.save();
 
     return res.status(200).json({
-      message: "Order confirmed successfully!",
+      message: "Order Updated successfully!",
       order,
       success: true,
     });
