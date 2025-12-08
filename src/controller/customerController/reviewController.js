@@ -6,24 +6,45 @@ exports.addReview = async (req, res) => {
     const customer = req.user.id;
     const { product, rating, comment } = req.body;
 
-    if (!product || !customer || !rating || !comment) {
+    if (!product || !customer || !rating) {
       return res.status(400).json({ message: "All fields are required." });
     }
 
+    // 🧠 Check if review already exists for this product by this customer
+    const existingReview = await reviewModel.findOne({ product, customer });
+
+    if (existingReview) {
+      // Update the existing review
+      existingReview.rating = rating;
+      existingReview.comment = comment;
+      existingReview.updatedAt = Date.now();
+
+      await existingReview.save();
+
+      return res.status(200).json({
+        message: "Review updated successfully!",
+        review: existingReview,
+      });
+    }
+
+    // 🆕 If no review exists, create a new one
     const newReview = new reviewModel({ product, customer, rating, comment });
     await newReview.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Review added successfully!",
       review: newReview,
     });
+
   } catch (error) {
-    console.error("Error adding review:", error);
-    res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    console.error("Error adding/updating review:", error);
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
+
 
 exports.getReviewsByProduct = async (req, res) => {
   try {
