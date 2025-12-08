@@ -8,8 +8,14 @@ const policyModel = require("../../models/policyModel");
 
 exports.placeOrder = async (req, res) => {
   try {
-    const { products, billingAddress, shippingAddress, paymentMethod } =
-      req.body;
+    const {
+      products,
+      billingAddress,
+      shippingAddress,
+      paymentMethod,
+      couponCode,
+      coupounDiscount,
+    } = req.body;
     const customerId = req.user?.id;
 
     if (!products || products.length === 0) {
@@ -63,18 +69,31 @@ exports.placeOrder = async (req, res) => {
         });
       }
 
+      const basePrice = dbProduct.price || item.price;
+
       // You can fetch variant price from dbProduct.variants if needed
       const price = dbProduct.discountedPrice || item.discountedPrice || 0;
 
+      const totalBasePrice = basePrice * item.quantity;
+      const total = price * item.quantity;
+
+      const discount = totalBasePrice - total;
       populatedProducts.push({
         productId: dbProduct.product._id,
         variantId: item.variantId,
         quantity: item.quantity,
-        discount: item.discount || 0,
+        discount,
+        totalBasePrice,
         price,
-        total: price * item.quantity - (item.discount || 0),
+        total,
       });
     }
+
+    const coupon = await couponModel.findOne({
+      couponCode: couponCode,
+      isActive: true,
+      isDeleted: false,
+    });
 
     //  Calculate summary
     const subTotal = populatedProducts.reduce((sum, i) => sum + i.total, 0);
@@ -106,7 +125,15 @@ exports.placeOrder = async (req, res) => {
       shippingCharge,
       totalAmount,
       expectedDeliveryDate,
+      coupounDiscount,
+      couponCode,
     });
+
+    if (coupon) {
+      coupon.usedBy.push({ userId: customerId, orderId: order._id, count: 1 });
+      coupon.usedCount += 1;
+      await coupon.save();
+    }
 
     //  Create transaction entry (optional if not COD)
     let transaction = null;
@@ -251,8 +278,9 @@ exports.fetchOrders = async (req, res) => {
           createdAt: { $first: "$createdAt" },
           expectedDeliveryDate: { $first: "$expectedDeliveryDate" },
           deliveryDate: { $first: "$deliveryDate" },
-          courierCompany:{$first:"$courierCompany"},
-          trackingNumber:{$first:"$trackingNumber"},          
+          courierCompany: { $first: "$courierCompany" },
+          trackingNumber: { $first: "$trackingNumber" },
+          coupounDiscount: { $first: "$coupounDiscount" },
           products: {
             $push: {
               productId: "$product.productId",
@@ -260,6 +288,7 @@ exports.fetchOrders = async (req, res) => {
               quantity: "$product.quantity",
               discount: "$product.discount",
               total: "$product.total",
+              totalBasePrice: "$product.totalBasePrice",
               title: "$product.productDetails.title",
               subTitle: "$product.productDetails.subTitle",
               size: "$product.variantDetails.size",
@@ -389,12 +418,15 @@ exports.getOrderById = async (req, res) => {
           shippingCharge: { $first: "$shippingCharge" },
           totalAmount: { $first: "$totalAmount" },
           remark: { $first: "$remark" },
+          couponCode: { $first: "$couponCode" },
+          coupounDiscount: { $first: "$coupounDiscount" },
           product: {
             $push: {
               productId: "$product.productId",
               variantId: "$product.variantId",
               quantity: "$product.quantity",
               discount: "$product.discount",
+              totalBasePrice: "$product.totalBasePrice",
               total: "$product.total",
               productDetails: "$product.productDetails",
               variantDetails: "$product.variantDetails",
@@ -504,6 +536,60 @@ exports.cancelOrder = async (req, res) => {
     console.error("Error cancelling order:", error);
     return res.status(500).json({
       message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+};
+
+exports.checkCoupons = async (req, res) => {
+  try {
+    const { code, total } = req.query;
+    let id = req.user.id;
+    console.log(id, "ppppp");
+    id = new mongoose.Types.ObjectId(id);
+    console.log(code, total);
+    if (!code || !total) {
+      return res.status(404).json({
+        success: false,
+        message: "Coupoun code and total amount is required.",
+      });
+    }
+
+    const currentDate = new Date();
+    let coupon = await couponModel.findOne({
+      startDate: { $lte: currentDate },
+      endDate: { $gte: currentDate },
+      minOrderAmount: { $lte: total },
+      couponCode: code,
+      isActive: true,
+      isDeleted: false,
+      "usedBy.userId": { $nin: id },
+    });
+    console.log("cupoun", coupon);
+    if (!coupon) {
+      return res.status(404).json({
+        success: false,
+        message: "Coupon not found!",
+      });
+    }
+    coupon.toObject();
+    if (coupon.usedCount >= coupon.usageLimit) {
+      return res.status(400).json({
+        success: false,
+        message: "Coupon usage limit exceeded.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "coupon fetched successfully.",
+      data: coupon,
+    });
+  } catch (error) {
+    console.error("Error fetching coupons:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while Checking coupons.",
       error: error.message,
     });
   }
