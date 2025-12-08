@@ -62,6 +62,11 @@ const couponSchema = new mongoose.Schema(
           ref: "Customer",
           required: true,
         },
+        orderId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "order",
+          required: true,
+        },
         count: {
           type: Number,
           default: 0,
