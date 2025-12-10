@@ -38,7 +38,7 @@ const orderSchema = new mongoose.Schema(
           required: true,
         },
         quantity: { type: Number, required: true, min: 1 },
-        totalBasePrice: { type: Number, required: true },
+        totalBasePrice: { type: Number, },
         discount: { type: Number, default: 0 },
         total: { type: Number },
       },
