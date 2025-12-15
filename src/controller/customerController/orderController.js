@@ -5,6 +5,7 @@ const couponModel = require("../../models/couponModel");
 const mongoose = require("mongoose");
 const cartModel = require("../../models/cartModel");
 const policyModel = require("../../models/policyModel");
+const salesReturnModel = require("../../models/salesReturnModel");
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -504,7 +505,7 @@ exports.cancelOrder = async (req, res) => {
     }
 
     // Check if the order belongs to this customer
-    if (order.customer._id.toString() !== customerId.toString()) {
+    if (order.customer.toString() !== customerId.toString()) {
       return res.status(403).json({
         message: "Unauthorized — you can only cancel your own orders",
       });
@@ -565,7 +566,6 @@ exports.checkCoupons = async (req, res) => {
       isDeleted: false,
       "usedBy.userId": { $nin: id },
     });
-    console.log("cupoun", coupon);
     if (!coupon) {
       return res.status(404).json({
         success: false,
@@ -592,5 +592,129 @@ exports.checkCoupons = async (req, res) => {
       message: "Server error while Checking coupons.",
       error: error.message,
     });
+  }
+};
+
+exports.createSalesReturn = async (req, res) => {
+  try {
+    const { order, returnedItems, reason } = req.body;
+    const customer = req.user?.id;
+
+    if (!order || !customer || !returnedItems || returnedItems.length === 0) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+
+    //  Verify order existence
+    const validOrder = await orderModel.findById(order);
+    if (!validOrder) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    //  Check order ownership
+    if (validOrder.customer.toString() !== customer.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized — you can only return your own orders.",
+      });
+    }
+
+    //  Check order delivery status
+    if (validOrder.orderStatus !== "delivered") {
+      return res.status(400).json({
+        success: false,
+        message: "You can only request a return for delivered orders.",
+      });
+    }
+
+    //  Calculate totalReturn and validate items
+    let totalReturn = 0;
+    const calculatedItems = [];
+
+    for (const item of returnedItems) {
+      const { variantId, quantity } = item;
+
+      const variant = await variantModel.findById(variantId);
+      if (!variant) {
+        return res
+          .status(404)
+          .json({ message: `Variant not found: ${variantId}` });
+      }
+
+      //  Check if variant was part of the order
+      const orderedVariant = validOrder.product.find(
+        (i) => i.variantId.toString() === variantId.toString()
+      );
+      if (!orderedVariant) {
+        return res.status(400).json({
+          success: false,
+          message: `Variant ${variantId} was not part of this order.`,
+        });
+      }
+
+      const qty = quantity || 1;
+
+      //  Get total quantity already returned for this variant
+      const previousReturns = await salesReturnModel.aggregate([
+        { $match: { order: validOrder._id, isDeleted: false } },
+        { $unwind: "$returnedItems" },
+        {
+          $match: {
+            "returnedItems.variantId": variant._id,
+          },
+        },
+        {
+          $group: {
+            _id: "$returnedItems.variantId",
+            totalReturnedQty: { $sum: "$returnedItems.quantity" },
+          },
+        },
+      ]);
+
+      const alreadyReturnedQty = previousReturns[0]?.totalReturnedQty || 0;
+      const totalToReturn = alreadyReturnedQty + qty;
+
+      //  Validate total quantity doesn’t exceed ordered quantity
+      if (totalToReturn > orderedVariant.quantity) {
+        const remainingQty =
+          orderedVariant.quantity - alreadyReturnedQty <= 0
+            ? 0
+            : orderedVariant.quantity - alreadyReturnedQty;
+        return res.status(400).json({
+          success: false,
+          message: `You cann't return more of this product.`,
+        });
+      }
+
+      //  Calculate refund amount
+      const amount = variant.discountedPrice * qty;
+      totalReturn += amount;
+
+      calculatedItems.push({
+        variantId,
+        quantity: qty,
+        amount,
+      });
+    }
+
+    //  Create return record
+    const newReturn = new salesReturnModel({
+      order,
+      customer,
+      returnedItems: calculatedItems,
+      totalReturn,
+      reason,
+    });
+
+    await newReturn.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Return request submitted successfully.",
+      totalReturn,
+      data: newReturn,
+    });
+  } catch (err) {
+    console.error("Error creating sales return:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
