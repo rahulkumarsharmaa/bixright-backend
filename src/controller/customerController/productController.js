@@ -75,7 +75,7 @@ exports.getActiveProducts = async (req, res) => {
     }
 
     if (minPrice || maxPrice) {
-      filter.basePrice = {};
+      filter.discountedPrice = {};
       if (minPrice) filter.discountedPrice.$gte = Number(minPrice);
       if (maxPrice) filter.discountedPrice.$lte = Number(maxPrice);
     }
