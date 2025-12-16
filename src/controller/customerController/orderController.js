@@ -421,6 +421,7 @@ exports.getOrderById = async (req, res) => {
           remark: { $first: "$remark" },
           couponCode: { $first: "$couponCode" },
           coupounDiscount: { $first: "$coupounDiscount" },
+          createdAt: { $first: "$createdAt" },
           product: {
             $push: {
               productId: "$product.productId",
