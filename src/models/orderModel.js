@@ -38,6 +38,7 @@ const orderSchema = new mongoose.Schema(
           required: true,
         },
         quantity: { type: Number, required: true, min: 1 },
+        totalBasePrice: { type: Number, },
         discount: { type: Number, default: 0 },
         total: { type: Number },
       },
@@ -124,6 +125,8 @@ const orderSchema = new mongoose.Schema(
     // Financial Summary (auto-calculated)
     subTotal: { type: Number, required: true, default: 0 },
     taxAmount: { type: Number, default: 0 },
+    couponCode: { type: String, default: "" },
+    coupounDiscount: { type: Number, default: 0 },
     shippingCharge: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true, default: 0 },
 
@@ -149,9 +152,8 @@ orderSchema.pre("save", async function (next) {
     });
 
     this.subTotal = this.product.reduce((acc, item) => acc + item.total, 0);
-    this.taxAmount = +(this.subTotal * 0.18).toFixed(2);
-    this.shippingCharge = this.subTotal > 500 ? 0 : 50;
-    this.totalAmount = this.subTotal + this.taxAmount + this.shippingCharge;
+    this.taxAmount = 0;
+    this.totalAmount = this.subTotal + this.taxAmount + this.shippingCharge - (this.coupounDiscount || 0);
 
     //  Generate unique sequential orderId if new
     if (this.isNew && !this.orderId) {

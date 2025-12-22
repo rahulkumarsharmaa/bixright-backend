@@ -24,13 +24,23 @@ exports.addToCart = async (req, res) => {
 
     if (existingItem) {
       // If exists, update quantity
-      existingItem.quantity += quantity;
-      await existingItem.save();
-      return res.status(200).json({
-        message: "Cart item quantity updated",
-        data: existingItem,
-        success: true,
-      });
+      if (
+        existingItem.quantity >= 10 ||
+        existingItem.quantity + quantity > 10
+      ) {
+        return res.status(400).json({
+          message: "Cannot add more than 10 items",
+          success: false,
+        });
+      } else {
+        existingItem.quantity += quantity;
+        await existingItem.save();
+        return res.status(200).json({
+          message: "Cart item quantity updated",
+          data: existingItem,
+          success: true,
+        });
+      }
     }
 
     // Otherwise, create new cart item
@@ -178,7 +188,7 @@ exports.updateCart = async (req, res) => {
         .status(404)
         .json({ message: "Cart item not found", success: false });
     }
-
+    console.log(cartItem, "ppppp");
     // Update quantity based on action
     if (action === "increase") {
       if (cartItem.quantity >= 10) {

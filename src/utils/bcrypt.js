@@ -4,7 +4,6 @@ const hashPassword = async (password) => {
   try {
     const stringPassword = String(password)
     const hashedPassword =  await bcrypt.hash(stringPassword, 10);
-    console.log('util' , hashedPassword)
     return hashedPassword
   } catch (error) {
     console.error("Bcrypt error:", error);

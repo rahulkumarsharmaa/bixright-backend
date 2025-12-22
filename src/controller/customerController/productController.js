@@ -75,7 +75,7 @@ exports.getActiveProducts = async (req, res) => {
     }
 
     if (minPrice || maxPrice) {
-      filter.basePrice = {};
+      filter.discountedPrice = {};
       if (minPrice) filter.discountedPrice.$gte = Number(minPrice);
       if (maxPrice) filter.discountedPrice.$lte = Number(maxPrice);
     }
@@ -159,7 +159,8 @@ exports.getProductById = async (req, res) => {
     }
 
     //  Fetch product
-    const product = await ProductModel.findById(id);
+    const product = await ProductModel.findById(id).lean();
+  
 
     if (!product) {
       return res.status(404).json({
@@ -190,6 +191,7 @@ exports.getProductById = async (req, res) => {
       images: product.images || [],
       discount: product.discount,
       discountedPrice: product.discountedPrice,
+      details: product.details || "",
       variants,
     };
 

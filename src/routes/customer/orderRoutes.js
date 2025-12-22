@@ -8,6 +8,8 @@ router.post("/place-order",authenticateUser, orderController.placeOrder);
 router.get("/fetch-orders",authenticateUser, orderController.fetchOrders);
 router.get("/fetch-order-by-id/:orderId",authenticateUser, orderController.getOrderById);
 router.get("/get-available-coupons", orderController.getAvailableCoupons);
-router.patch("/cancel-order",authenticateUser,orderController.cancelOrder)
+router.get("/check-coupons",authenticateUser, orderController.checkCoupons);
+router.patch("/cancel-order",authenticateUser,orderController.cancelOrder);
+router.post("/create-return",authenticateUser,orderController.createSalesReturn);
 
 module.exports = router;

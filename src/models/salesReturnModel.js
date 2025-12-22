@@ -34,6 +34,7 @@ const salesReturnSchema = new mongoose.Schema(
     },
 
     remark: { type: String },
+    
     date: { type: Date, default: Date.now },
 
     isDeleted: {
