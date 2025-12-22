@@ -421,6 +421,7 @@ exports.getOrderById = async (req, res) => {
           remark: { $first: "$remark" },
           couponCode: { $first: "$couponCode" },
           coupounDiscount: { $first: "$coupounDiscount" },
+          createdAt: { $first: "$createdAt" },
           product: {
             $push: {
               productId: "$product.productId",
@@ -498,12 +499,11 @@ exports.cancelOrder = async (req, res) => {
     // Find order
     const order = await orderModel
       .findOne({ _id: orderId })
-      .populate("customer", "_id");
-
+      
+    console.log(order);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-
     // Check if the order belongs to this customer
     if (order.customer.toString() !== customerId.toString()) {
       return res.status(403).json({
