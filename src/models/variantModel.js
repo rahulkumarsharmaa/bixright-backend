@@ -10,11 +10,9 @@ const variantSchema = new mongoose.Schema({
 
   sku: {
     type: String,
-    required: true,
     unique: true,
     uppercase: true,
     trim: true,
-    set: (v) => v.replace(/\s+/g, "-"),
   },
 
   quantity: {
@@ -40,9 +38,11 @@ const variantSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  discountedPrice:{
-    type:Number,
-    default:this.price,
+  discountedPrice: {
+    type: Number,
+    default: function () {
+      return this.price;
+    },
   },
 
   image: {
@@ -71,7 +71,6 @@ variantSchema.pre("findOneAndUpdate", function (next) {
   next();
 });
 
-
 variantSchema.pre(["save", "findOneAndUpdate"], function (next) {
   let data = this;
 
@@ -87,7 +86,6 @@ variantSchema.pre(["save", "findOneAndUpdate"], function (next) {
     else if (qty <= 10) data.status = "lowstock";
     else data.status = "instock";
 
-
     if (this.getUpdate) {
       this.setUpdate(data);
     }
@@ -96,17 +94,29 @@ variantSchema.pre(["save", "findOneAndUpdate"], function (next) {
   next();
 });
 
-
 variantSchema.pre("save", function (next) {
-  if (this.quantity <= 0) {
-    this.status = "outofstock";
-  } else if (this.quantity <= 10) {
-    this.status = "lowstock";
-  } else {
-    this.status = "instock";
+  if (!this.sku) {
+    const randomCode = crypto.randomBytes(3).toString("hex").toUpperCase();
+
+    const size = this.size ? this.size.toUpperCase() : "NA";
+    const color = this.color ? this.color.toUpperCase() : "NA";
+
+    this.sku = `SKU-${size}-${color}-${randomCode}`;
   }
+
   next();
 });
+
+// variantSchema.pre("save", function (next) {
+//   if (this.quantity <= 0) {
+//     this.status = "outofstock";
+//   } else if (this.quantity <= 10) {
+//     this.status = "lowstock";
+//   } else {
+//     this.status = "instock";
+//   }
+//   next();
+// });
 
 const Variant = mongoose.model("Variant", variantSchema);
 
