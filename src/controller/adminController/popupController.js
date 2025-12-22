@@ -19,7 +19,7 @@ exports.getPopupData = async (req, res) => {
   }
 };
 
-const getPopupById = async (req, res) => {
+exports.getPopupById = async (req, res) => {
   const id = req.params;
   console.log(id);
 

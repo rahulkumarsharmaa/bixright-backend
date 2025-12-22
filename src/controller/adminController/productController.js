@@ -227,6 +227,7 @@ const addProduct = async (req, res) => {
       title,
       subTitle,
       description,
+      details,
       brand,
       category,
       subCategory,
@@ -236,6 +237,8 @@ const addProduct = async (req, res) => {
       discount,
       tags,
     } = req.body;
+
+    console.log(req.body, "product add body");
 
     // Validate required fields
     if (
@@ -326,7 +329,6 @@ const addProduct = async (req, res) => {
           imageId: result.public_id,
           isCover: i === 0,
         });
-        
       }
     }
 
@@ -340,6 +342,7 @@ const addProduct = async (req, res) => {
       title,
       subTitle,
       description,
+      details,
       basePrice,
       brand: { id: brandData._id, name: brandData.title },
       category: { id: categoryData._id, name: categoryData.title },

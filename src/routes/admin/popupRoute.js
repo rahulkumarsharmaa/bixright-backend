@@ -4,6 +4,7 @@ const router = express.Router();
 const upload = require("../../middleware/multerCloudinaryMiddleware");
 
 router.get('/popup-data', popupController.getPopupData)
+router.get('/:id', popupController.getPopupById)
 router.post("/add", upload.single("image"), popupController.createPopup);
 router.patch(
   "/update/:id",

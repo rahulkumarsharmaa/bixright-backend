@@ -13,7 +13,6 @@ const upload = require("../../middleware/multerCloudinaryMiddleware");
 
 const router = express.Router();
 
-
 router.get("/variant-data/:id", getVariantData);
 router.get("/:id", getVariantById);
 router.post("/add-variant", addVariant);
