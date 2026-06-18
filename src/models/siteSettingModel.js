@@ -5,7 +5,7 @@ const siteSettingsSchema = new mongoose.Schema(
     siteName: {
       type: String,
       required: true,
-      default: "Kalbeliya",
+      default: "Cinoright",
     },
     logoUrl: {
       type: String,
@@ -49,7 +49,7 @@ const siteSettingsSchema = new mongoose.Schema(
     //  Footer details
     footerText: {
       type: String,
-      default: "© 2025 Kalbeliya. All rights reserved. | Crafted with camlenio",
+      default: "© 2025 Cinoright. All rights reserved. | Crafted with cinoright",
     },
   },
   { timestamps: true, versionKey: false }

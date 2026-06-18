@@ -3,10 +3,10 @@ const Supplier = require("../../models/supplierModel");
 const getSupplierData = async (req, res) => {
   try {
     const supplier = await Supplier.find();
-    if (!supplier) {
+    if (!supplier || supplier.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No Supplier Yet" });
+        .status(200)
+        .json({ success: true, message: "No Supplier Yet", supplier: [] });
     }
 
     return res
@@ -182,13 +182,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "supplierIds Missing" });
     }
 
-     const result = await Supplier.updateMany(
+    const result = await Supplier.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

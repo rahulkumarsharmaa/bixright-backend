@@ -1,4 +1,5 @@
-const cloudinary = require("../../config/cloudinaryConfig");
+const fs = require('fs');
+const path = require('path');
 const {
   generateProductVariants,
 } = require("../../helpers/generateProductVariants");
@@ -13,25 +14,72 @@ const Tag = require("../../models/tagModel");
 
 const getProductData = async (req, res) => {
   try {
-    console.log("product controller", req.user);
-    const product = await Product.find({ isDeleted: false });
-    if (!product || product.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No product Found" });
+    let { page = 1, limit = 10, search = "", status } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const skip = (page - 1) * limit;
+
+    const filter = { isDeleted: false }; // Base filter
+
+    // Search Filter
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { subTitle: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "product Fetched", product });
+    // Status Filter
+    if (status) {
+      if (status === "true" || status === "active") {
+        filter.isActive = true;
+      } else if (status === "false" || status === "inactive") {
+        filter.isActive = false;
+      }
+    }
+
+    // Explicitly populate references if needed, though they are stored as objects {id, name} in the model usually, 
+    // but looking at addProduct, they are stored as embedded objects {id, name}. 
+    // So find() should be enough.
+
+    // However, the Product model usage in addProduct shows:
+    // brand: { id: brandData._id, name: brandData.title }
+    // So no need to populate.
+
+    const product = await Product.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Product.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      message: product.length === 0 ? "No product found" : "Products Fetched",
+      data: {
+        data: product,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      // Keep 'product' key for backward compatibility if needed temporarily, 
+      // but ideally we switch to data.data.
+      // The frontend will be updated to use data.data.data.
+    });
   } catch (error) {
     console.log(error);
-    return res.status(500).json(error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 const getProductById = async (req, res) => {
-  const id = req.params;
+  const { id } = req.params;
   console.log(id);
 
   if (!id) {
@@ -221,6 +269,21 @@ const getProductById = async (req, res) => {
 //   }
 // };
 
+const deleteLocalFile = (filePath) => {
+  if (!filePath) return;
+  if (filePath.startsWith("http")) return; // Ignore URLs or Cloudinary paths
+
+  // filePath is expected to be relative like "uploads\filename..." or "uploads/filename..."
+  // resolving it from current directory is tricky if we don't know where PWD is.
+  // Ideally use process.cwd() or similar.
+  const fullPath = path.resolve(filePath);
+
+  fs.unlink(fullPath, (err) => {
+    if (err) console.error("Failed to delete local file:", fullPath, err);
+    // else console.log("Deleted local file:", fullPath);
+  });
+};
+
 const addProduct = async (req, res) => {
   try {
     const {
@@ -236,6 +299,8 @@ const addProduct = async (req, res) => {
       basePrice,
       discount,
       tags,
+      type, // 'single' or 'variant'
+      stock,
     } = req.body;
 
     console.log(req.body, "product add body");
@@ -244,24 +309,45 @@ const addProduct = async (req, res) => {
     if (
       !title ||
       !description ||
-      !basePrice ||
+      basePrice === undefined || basePrice === null ||
       !category ||
-      !size ||
-      !color ||
       !brand ||
-      !discount
+      discount === undefined || discount === null
     ) {
       return res.status(400).json({
         success: false,
-        message:
-          "Details Missing: Please provide title, description, price, discount, category, size, color, and brand.",
+        message: "Details Missing",
       });
     }
 
+    // Default to 'simple' if not provided
+    const productType = type || "simple";
+
     // Normalize size and color to arrays
-    const sizeArr = Array.isArray(size) ? size : [size].filter(Boolean);
-    const colorArr = Array.isArray(color) ? color : [color].filter(Boolean);
-    const tagsArr = Array.isArray(tags) ? tags : [tags].filter(Boolean);
+    const sizeArr = Array.isArray(size) ? size : (size ? [size] : []);
+    const colorArr = Array.isArray(color) ? color : (color ? [color] : []);
+    const tagsArr = Array.isArray(tags) ? tags : (tags ? [tags] : []);
+
+    // Logic based on Product Type
+    const isVariantProduct = productType === "variant";
+
+    // Validate size and color ONLY if it is a variant product
+    if (isVariantProduct) {
+      if (sizeArr.length === 0 && colorArr.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Variant Product must have at least one size or color selected."
+        });
+      }
+    } else {
+      // Logic for SIMPLE product
+      if (stock === undefined || stock === null || stock < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Simple Product must have a valid stock quantity."
+        });
+      }
+    }
 
     // Fetch and validate brand, category, subcategory
     const brandData = await Brand.findById(brand);
@@ -276,25 +362,34 @@ const addProduct = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Category not found" });
 
-    const subCategoryData = await SubCategory.findById(subCategory);
-    if (!subCategoryData)
-      return res
-        .status(400)
-        .json({ success: false, message: "Sub Category not found" });
+    let subCategoryData = null;
+    if (subCategory && subCategory !== "") {
+      subCategoryData = await SubCategory.findById(subCategory);
+      if (!subCategoryData)
+        return res
+          .status(400)
+          .json({ success: false, message: "Sub Category not found" });
+    }
 
-    // Validate sizes
-    const sizeData = await Size.find({ _id: { $in: sizeArr } });
-    if (sizeData.length !== sizeArr.length)
-      return res
-        .status(400)
-        .json({ success: false, message: "One or more sizes are invalid" });
+    // Validate sizes if present and it's a variant product
+    let sizeData = [];
+    if (isVariantProduct && sizeArr.length > 0) {
+      sizeData = await Size.find({ _id: { $in: sizeArr } });
+      if (sizeData.length !== sizeArr.length)
+        return res
+          .status(400)
+          .json({ success: false, message: "One or more sizes are invalid" });
+    }
 
-    // Validate colors
-    const colorData = await Color.find({ _id: { $in: colorArr } });
-    if (colorData.length !== colorArr.length)
-      return res
-        .status(400)
-        .json({ success: false, message: "One or more colors are invalid" });
+    // Validate colors if present and it's a variant product
+    let colorData = [];
+    if (isVariantProduct && colorArr.length > 0) {
+      colorData = await Color.find({ _id: { $in: colorArr } });
+      if (colorData.length !== colorArr.length)
+        return res
+          .status(400)
+          .json({ success: false, message: "One or more colors are invalid" });
+    }
 
     let tagData = [];
     if (tags) {
@@ -305,28 +400,25 @@ const addProduct = async (req, res) => {
           .json({ success: false, message: "One or more tags are invalid" });
     }
 
-    // Handle image uploads
+    // Handle image uploads (Local Storage)
     const productImages = [];
-    const uploadToCloudinary = (fileBuffer) => {
-      return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "products" },
-          (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-          }
-        );
-        stream.end(fileBuffer);
-      });
-    };
 
+    // req.files is array of file objects from multer diskStorage
+    // Each file has 'path' property like 'uploads/filename.ext'
     if (req.files && req.files.length > 0) {
+      const baseUrl = process.env.BACKEND_URL;
+
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
-        const result = await uploadToCloudinary(file.buffer);
+
+        // Normalize windows paths
+        let fileUrl = file.path.replace(/\\/g, "/");
+
+        const fullUrl = `${baseUrl}/${fileUrl}`;
+
         productImages.push({
-          imageUrl: result.secure_url,
-          imageId: result.public_id,
+          imageUrl: fullUrl,
+          imageId: file.path, // Store local path as ID for easier deletion later
           isCover: i === 0,
         });
       }
@@ -346,17 +438,23 @@ const addProduct = async (req, res) => {
       basePrice,
       brand: { id: brandData._id, name: brandData.title },
       category: { id: categoryData._id, name: categoryData.title },
-      subCategory: { id: subCategoryData._id, name: subCategoryData.title },
+      subCategory: subCategoryData
+        ? { id: subCategoryData._id, name: subCategoryData.title }
+        : undefined,
       size: sizeData.map((s) => ({ id: s._id })),
       color: colorData.map((c) => ({ id: c._id })),
       tags: tagData.map((t) => ({ id: t._id, name: t.title })),
       images: productImages,
       discount: discountPercentage,
       discountedPrice: discountedPrice,
+      type: productType,
+      stock: isVariantProduct ? 0 : Number(stock), // Save stock for simple product, 0 for variant (variants manage their own)
     });
 
-    // Generate product variants
-    await generateProductVariants(product);
+    // Generate product variants ONLY if it is a variant product
+    if (isVariantProduct) {
+      await generateProductVariants(product);
+    }
 
     // Save product
     await product.save();
@@ -375,18 +473,7 @@ const addProduct = async (req, res) => {
   }
 };
 
-const uploadToCloudinary = (fileBuffer) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: "products" },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-    stream.end(fileBuffer);
-  });
-};
+
 
 // const updateProduct = async (req, res) => {
 //   console.log("body", req.body);
@@ -518,7 +605,18 @@ const updateProduct = async (req, res) => {
       isActive,
       isVisible,
       tags,
+      stock, // Add stock here
+      // type is usually not editable after creation, but if allowed:
+      // type, 
     } = req.body;
+
+    // Fetch existing product to check type
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+    }
 
     const updateData = {};
 
@@ -530,6 +628,11 @@ const updateProduct = async (req, res) => {
     if (discount) updateData.discount = discount;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (typeof isVisible !== "undefined") updateData.isVisible = isVisible;
+
+    // Update stock only if product is simple
+    if (existingProduct.type === 'simple' && stock !== undefined) {
+      updateData.stock = Number(stock);
+    }
 
     // ---------- BRAND ----------
     if (brand) {
@@ -552,17 +655,20 @@ const updateProduct = async (req, res) => {
     }
 
     // ---------- SUB CATEGORY ----------
-    if (subCategory) {
+    if (subCategory && subCategory !== "") {
       const subCatData = await SubCategory.findById(subCategory);
       if (!subCatData)
         return res
           .status(400)
           .json({ success: false, message: "Subcategory not found" });
       updateData.subCategory = { id: subCatData._id, name: subCatData.title };
+    } else if (subCategory === "") {
+      // Explicitly clear subCategory if empty string passed
+      updateData.subCategory = undefined;
     }
 
-    // ---------- SIZE ----------
-    if (size) {
+    // ---------- SIZE (only if product is a variant type) ----------
+    if (existingProduct.type === "variant" && size) {
       const sizeArr = Array.isArray(size) ? size : size.split(",");
       const sizeData = await Size.find({ _id: { $in: sizeArr } });
       if (sizeData.length !== sizeArr.length)
@@ -572,8 +678,8 @@ const updateProduct = async (req, res) => {
       updateData.size = sizeData.map((s) => ({ id: s._id }));
     }
 
-    // ---------- COLOR ----------
-    if (color) {
+    // ---------- COLOR (only if product is a variant type) ----------
+    if (existingProduct.type === "variant" && color) {
       const colorArr = Array.isArray(color) ? color : color.split(",");
       const colorData = await Color.find({ _id: { $in: colorArr } });
       if (colorData.length !== colorArr.length)
@@ -595,7 +701,7 @@ const updateProduct = async (req, res) => {
       updateData.tags = tagsData.map((t) => ({ id: t._id, name: t.title }));
     }
 
-    // ---------- DELETE IMAGES ----------
+    // ---------- DELETE IMAGES (Local) ----------
     if (imagesToDelete) {
       console.log("imagestodelete", imagesToDelete);
       const ids = Array.isArray(imagesToDelete)
@@ -603,8 +709,9 @@ const updateProduct = async (req, res) => {
         : imagesToDelete.split(",").filter(Boolean);
 
       console.log("ids", ids);
-      for (const publicId of ids) {
-        await cloudinary.uploader.destroy(publicId);
+      for (const imageId of ids) {
+        // Here imageId is the filePath we stored, e.g. "uploads\filename..."
+        deleteLocalFile(imageId);
       }
 
       await Product.findByIdAndUpdate(productId, {
@@ -612,16 +719,21 @@ const updateProduct = async (req, res) => {
       });
     }
 
-    // ---------- ADD NEW IMAGES ----------
+    // ---------- ADD NEW IMAGES (Local) ----------
     let pushData = {};
     if (req.files && req.files.length > 0) {
       console.log("files", req.files);
       const uploadedImages = [];
+      const baseUrl = process.env.BACKEND_URL;
+
       for (const file of req.files) {
-        const result = await uploadToCloudinary(file.buffer);
+        // storage logic same as addProduct
+        let fileUrl = file.path.replace(/\\/g, "/");
+        const fullUrl = `${baseUrl}/${fileUrl}`;
+
         uploadedImages.push({
-          imageUrl: result.secure_url,
-          imageId: result.public_id,
+          imageUrl: fullUrl,
+          imageId: file.path,
           isCover: false,
         });
       }
@@ -640,10 +752,13 @@ const updateProduct = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Product not found" });
 
-    // ---------- REGENERATE VARIANTS ----------
-    if ((size && size.length > 0) || (color && color.length > 0)) {
-      await generateProductVariants(product);
-      product = await Product.findById(productId);
+    // ---------- REGENERATE VARIANTS (Only if variant type) ----------
+    if (product.type === "variant") {
+      // If sizes or colors changed, regenerate
+      if ((size && size.length > 0) || (color && color.length > 0)) {
+        await generateProductVariants(product);
+        product = await Product.findById(productId);
+      }
     }
 
     // ---------- HANDLE COVER IMAGE ----------

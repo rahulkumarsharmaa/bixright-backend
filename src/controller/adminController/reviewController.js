@@ -1,11 +1,11 @@
 const Review = require("../../models/reviewModel");
 const getReviewData = async (req, res) => {
   try {
-    const review = await Review.find({isDeleted : false}).populate('product', 'title').populate('customer', 'firstName lastName' );
-    if (!review) {
+    const review = await Review.find({ isDeleted: false }).populate('product', 'title').populate('customer', 'firstName lastName');
+    if (!review || review.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No Review Found" });
+        .status(200)
+        .json({ success: true, message: "No Review Found", review: [] });
     }
 
     return res
@@ -144,13 +144,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "ReviewIds Missing" });
     }
 
-     const result = await Review.updateMany(
+    const result = await Review.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

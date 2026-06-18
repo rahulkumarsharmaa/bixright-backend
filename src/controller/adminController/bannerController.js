@@ -1,25 +1,69 @@
 const Banner = require("../../models/bannerModel");
-const cloudinary = require("../../config/cloudinaryConfig");
+
 const getBannerData = async (req, res) => {
   try {
-    const banner = await Banner.find({isDeleted : false});
-    if (!banner) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No banner Found" });
+    // Check if pagination is requested
+    if (!req.query.page && !req.query.limit) {
+      const banner = await Banner.find({ isDeleted: false }).sort({ createdAt: -1 });
+      return res.status(200).json({
+        success: true,
+        message: "Banner Fetched",
+        banner,
+      });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Banner Fetched", banner });
+    let { page = 1, limit = 10, search = "", status } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const skip = (page - 1) * limit;
+
+    const filter = { isDeleted: false };
+
+    if (status) {
+      if (status === "true" || status === "active") {
+        filter.isActive = true;
+      } else if (status === "false" || status === "inactive") {
+        filter.isActive = false;
+      }
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { subTitle: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const banner = await Banner.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Banner.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      message: banner.length === 0 ? "No banner Found" : "Banner Fetched",
+      data: {
+        data: banner,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
   } catch (error) {
     console.log(error);
-    return res.status(500).json(error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 const getBannerById = async (req, res) => {
-  const id = req.params;
+  const { id } = req.params;
   console.log(id);
 
   try {
@@ -45,25 +89,12 @@ const addBanner = async (req, res) => {
 
     // If image exists
     if (req.file) {
-      const uploadToCloudinary = () => {
-        return new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "banners" },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result);
-            }
-          );
-
-          stream.end(req.file.buffer); // IMPORTANT
-        });
-      };
-
-      const uploadedImage = await uploadToCloudinary();
+      const baseUrl = process.env.BACKEND_URL;
+      let fileUrl = req.file.path.replace(/\\/g, "/");
 
       imageData = {
-        imageUrl: uploadedImage.secure_url,
-        imageId: uploadedImage.public_id,
+        imageUrl: `${baseUrl}/${fileUrl}`,
+        imageId: req.file.path,
       };
     }
 
@@ -163,11 +194,11 @@ const bulkDelete = async (req, res) => {
 
     const result = await Banner.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

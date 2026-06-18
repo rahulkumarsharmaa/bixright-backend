@@ -126,6 +126,8 @@ exports.getActiveProducts = async (req, res) => {
         images: [coverImage] || null,
         discount: item.discount,
         discountedPrice: item.discountedPrice,
+        type: item.type,
+        stock: item.stock,
       };
     });
 
@@ -160,7 +162,7 @@ exports.getProductById = async (req, res) => {
 
     //  Fetch product
     const product = await ProductModel.findById(id).lean();
-  
+
 
     if (!product) {
       return res.status(404).json({
@@ -192,6 +194,8 @@ exports.getProductById = async (req, res) => {
       discount: product.discount,
       discountedPrice: product.discountedPrice,
       details: product.details || "",
+      type: product.type,
+      stock: product.stock,
       variants,
     };
 
@@ -394,6 +398,8 @@ exports.getRecentlyAddedProducts = async (req, res) => {
         brandId: item.brand?.id || null,
         brandName: item.brand?.name || null,
         images: [coverImage] || null,
+        type: item.type,
+        stock: item.stock,
       };
     });
 

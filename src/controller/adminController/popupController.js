@@ -1,13 +1,13 @@
 const Popup = require("../../models/popupModel");
-const cloudinary = require("../../config/cloudinaryConfig");
+
 
 exports.getPopupData = async (req, res) => {
   try {
-    const popup = await Popup.find({isDeleted : false});
-    if (!popup) {
+    const popup = await Popup.find({ isDeleted: false });
+    if (!popup || popup.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No popup Found" });
+        .status(200)
+        .json({ success: true, message: "No popup Found", popup: [] });
     }
 
     return res
@@ -20,7 +20,7 @@ exports.getPopupData = async (req, res) => {
 };
 
 exports.getPopupById = async (req, res) => {
-  const id = req.params;
+  const id = req.params.id;
   console.log(id);
 
   try {
@@ -45,23 +45,9 @@ exports.createPopup = async (req, res) => {
     let image = "";
 
     if (req.file) {
-      const uploadToCloudinary = () => {
-        return new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "popup" },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result);
-            }
-          );
-
-          stream.end(req.file.buffer); // IMPORTANT
-        });
-      };
-
-      const uploadedImage = await uploadToCloudinary();
-
-      image = uploadedImage.secure_url;
+      const baseUrl = process.env.BACKEND_URL;
+      let fileUrl = req.file.path.replace(/\\/g, "/");
+      image = `${baseUrl}/${fileUrl}`;
     }
 
     await Popup.updateMany({ isActive: true }, { $set: { isActive: false } });
@@ -96,24 +82,11 @@ exports.updatePopup = async (req, res) => {
         .json({ success: false, message: "Popup not found" });
     }
 
+    let image = popup.image;
     if (req.file) {
-      const uploadToCloudinary = () => {
-        return new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "popup" },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result);
-            }
-          );
-
-          stream.end(req.file.buffer); // IMPORTANT
-        });
-      };
-
-      const uploadedImage = await uploadToCloudinary();
-
-      image = uploadedImage.secure_url;
+      const baseUrl = process.env.BACKEND_URL;
+      let fileUrl = req.file.path.replace(/\\/g, "/");
+      image = `${baseUrl}/${fileUrl}`;
     }
     req.body.image = image;
 
@@ -151,7 +124,7 @@ exports.getActivePopup = async (req, res) => {
     const now = new Date();
     const popup = await Popup.findOne({
       isActive: true,
-      $or: [{ endDate: { $gte: now } }, { endDate: null }],
+      isDeleted: false,
     }).sort({ createdAt: -1 });
 
     if (!popup) {
@@ -165,4 +138,45 @@ exports.getActivePopup = async (req, res) => {
     console.error("Error fetching active popup:", error);
     res.status(500).json({ success: false, message: error.message });
   }
-}
+};
+
+exports.softDeletePopup = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const popup = await Popup.findByIdAndUpdate(
+      id,
+      { isDeleted: true, isActive: false },
+      { new: true }
+    );
+
+    if (!popup) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Popup not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Popup deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.bulkDelete = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ success: false, message: "Invalid IDs" });
+    }
+
+    await Popup.updateMany(
+      { _id: { $in: ids } },
+      { $set: { isDeleted: true, isActive: false } }
+    );
+
+    res.status(200).json({ success: true, message: "Popups deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

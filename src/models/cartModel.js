@@ -15,15 +15,15 @@ const cartSchema = new mongoose.Schema(
     variantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Variant",
-      required: true,
+      required: false,
     },
-    quantity:{
-        type:Number,
-        default:1
+    quantity: {
+      type: Number,
+      default: 1
     },
-    isDeleted:{
-        type:Boolean,
-        default:false
+    isDeleted: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true, versionKey: false }

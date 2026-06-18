@@ -1,19 +1,52 @@
 const Attribute = require("../../models/attributeModel");
 const getAttributeData = async (req, res) => {
   try {
-    const attribute = await Attribute.find();
-    if (!attribute) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No Attribute Found" });
+    let { page = 1, limit = 10, search = "", status } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const skip = (page - 1) * limit;
+
+    const filter = { isDeleted: false };
+
+    if (status) {
+      if (status === "true" || status === "active") {
+        filter.status = "active";
+      } else if (status === "false" || status === "inactive") {
+        filter.status = "inactive";
+      }
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Attribute Fetched", attribute });
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const attribute = await Attribute.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Attribute.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      message: attribute.length === 0 ? "No Attribute Found" : "Attribute Fetched",
+      data: {
+        data: attribute,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
   } catch (error) {
     console.log(error);
-    return res.status(500).json(error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -147,11 +180,11 @@ const bulkDelete = async (req, res) => {
 
     const result = await Attribute.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

@@ -8,7 +8,7 @@ exports.addToCart = async (req, res) => {
     const { productId, variantId, quantity = 1 } = req.body;
 
     // Validate input
-    if (!customerId || !productId || !variantId) {
+    if (!customerId || !productId) {
       return res
         .status(400)
         .json({ message: "Missing required fields", success: false });
@@ -102,7 +102,7 @@ exports.getCartByCustomer = async (req, res) => {
           as: "variant",
         },
       },
-      { $unwind: "$variant" },
+      { $unwind: { path: "$variant", preserveNullAndEmptyArrays: true } },
       // Project the final structure you want in response
       {
         $project: {
@@ -112,17 +112,18 @@ exports.getCartByCustomer = async (req, res) => {
           createdAt: 1,
           productId: "$product._id",
           title: "$product.title",
-          price: "$variant.price",
-          discountedPrice: "$variant.discountedPrice",
+          price: { $ifNull: ["$variant.price", "$product.basePrice"] },
+          discountedPrice: { $ifNull: ["$variant.discountedPrice", "$product.discountedPrice"] },
           discount: "$product.discount",
           images: "$product.images",
-          image: "$variant.image",
+          image: { $ifNull: ["$variant.image", { $arrayElemAt: ["$product.images.imageUrl", 0] }] },
           brandName: "$product.brand.name",
           subTitle: "$product.subTitle",
-          stockCount: "$variant.quantity",
+          stockCount: { $ifNull: ["$variant.quantity", "$product.stock"] },
           variantId: "$variant._id",
           color: "$variant.color",
           size: "$variant.size",
+          type: "$product.type"
         },
       },
       { $sort: { createdAt: -1 } },
@@ -135,7 +136,7 @@ exports.getCartByCustomer = async (req, res) => {
     }
 
     totalAmount = cartItems.reduce(
-      (acc, val) => val.price * val.quantity + acc,
+      (acc, val) => (val.discountedPrice || val.price) * val.quantity + acc,
       0
     );
 
@@ -162,7 +163,7 @@ exports.updateCart = async (req, res) => {
 
     const { productId, variantId, action } = req.body;
 
-    if (!customerId || !productId || !variantId || !action) {
+    if (!customerId || !productId || !action) {
       return res
         .status(400)
         .json({ message: "Missing required fields", success: false });

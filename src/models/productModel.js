@@ -22,6 +22,13 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+
+    type: {
+      type: String,
+      enum: ["simple", "variant"],
+      default: "simple",
+    },
+
     discount: {
       type: Number,
       min: 0,
@@ -85,6 +92,14 @@ const productSchema = new mongoose.Schema(
     //   type: Number,
     //   required: true,
     // },
+
+    stock: {
+      type: Number,
+      required: function () {
+        return this.type === 'simple';
+      },
+      default: 0
+    },
 
     isActive: {
       type: Boolean,

@@ -1,20 +1,65 @@
 const Category = require("../../models/categoryModel");
-const cloudinary = require('../../config/cloudinaryConfig')
+
 const getCategoryData = async (req, res) => {
   try {
-    const category = await Category.find({isDeleted : false});
-    if (!category) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No category Found" });
+    // Check if pagination is requested (presence of page or limit)
+    // If not, return all data in legacy format for dropdowns/backward compatibility
+    if (!req.query.page && !req.query.limit) {
+      const category = await Category.find({ isDeleted: false }).sort({ createdAt: -1 });
+      return res.status(200).json({
+        success: true,
+        message: "Category Fetched",
+        category,
+      });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Category Fetched", category });
+    let { page = 1, limit = 10, search = "", status } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const skip = (page - 1) * limit;
+
+    const filter = { isDeleted: false };
+
+    if (status) {
+      if (status === "true" || status === "active") {
+        filter.isActive = true;
+      } else if (status === "false" || status === "inactive") {
+        filter.isActive = false;
+      }
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const category = await Category.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Category.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      message: category.length === 0 ? "No category found" : "Category Fetched",
+      data: {
+        data: category,
+        pagination: {
+          page: page,
+          limit: limit,
+          total: total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
   } catch (error) {
     console.log(error);
-    return res.status(500).json(error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -75,19 +120,9 @@ const addCategory = async (req, res) => {
     }
 
     if (file) {
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "variants" },
-          (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-          }
-        );
-
-        stream.end(file.buffer); // upload buffer
-      });
-
-      imageUrl = uploadResult.secure_url;
+      const baseUrl = process.env.BACKEND_URL;
+      let fileUrl = file.path.replace(/\\/g, "/");
+      imageUrl = `${baseUrl}/${fileUrl}`;
     }
 
     // 🟣 Check parent category (if provided)
@@ -104,7 +139,7 @@ const addCategory = async (req, res) => {
 
     // 🔵 Create category (slug auto-generated in model)
     const category = new Category({
-      image : imageUrl,
+      image: imageUrl,
       title,
       description,
       // parentCategory: parentCatData
@@ -149,18 +184,9 @@ const updateCategory = async (req, res) => {
 
     // If new image uploaded
     if (file) {
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "variants" },
-          (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-          }
-        );
-        stream.end(file.buffer);
-      });
-
-      imageUrl = uploadResult.secure_url;
+      const baseUrl = process.env.BACKEND_URL;
+      let fileUrl = file.path.replace(/\\/g, "/");
+      imageUrl = `${baseUrl}/${fileUrl}`;
     }
 
     // Build update object ONLY with fields that exist
@@ -197,40 +223,6 @@ const updateCategory = async (req, res) => {
   }
 };
 
-
-// const updateCategory = async (req, res) => {
-//   try {
-//     const categoryId = req.params.id;
-//     const data = req.body;
-//     console.log(data);
-
-//     if (!categoryId) {
-//       return res
-//         .status(400)
-//         .json({ success: false, message: "CategoryId Missing" });
-//     }
-
-//     const category = await Category.findByIdAndUpdate(categoryId, data, {
-//       new: true,
-//     });
-
-//     if (!category) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Category not found" });
-//     }
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Category Updated Successfully",
-//       category,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// };
-
 const deleteCategory = async (req, res) => {
   try {
     const categoryId = req.params.id;
@@ -266,13 +258,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "CategoryIds Missing" });
     }
 
-     const result = await Category.updateMany(
+    const result = await Category.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

@@ -2,11 +2,11 @@ const Coupon = require("../../models/couponModel");
 const cloudinary = require("../../config/cloudinaryConfig");
 const getCouponData = async (req, res) => {
   try {
-    const coupon = await Coupon.find({isDeleted : false});
-    if (!coupon) {
+    const coupon = await Coupon.find({ isDeleted: false });
+    if (!coupon || coupon.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No Coupon Found" });
+        .status(200)
+        .json({ success: true, message: "No Coupon Found", coupon: [] });
     }
 
     return res

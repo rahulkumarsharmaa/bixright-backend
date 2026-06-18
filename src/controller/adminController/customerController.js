@@ -4,10 +4,10 @@ const Customer = require("../../models/customerModel");
 const getCustomerData = async (req, res) => {
   try {
     const customer = await Customer.find();
-    if (!customer) {
+    if (!customer || customer.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No Customer Yet" });
+        .status(200)
+        .json({ success: true, message: "No Customer Yet", customer: [] });
     }
 
     return res
@@ -61,7 +61,7 @@ const addCustomer = async (req, res) => {
       remark,
     } = req.body;
 
-    if (!firstName || !dob || !phone || !email  ) {
+    if (!firstName || !dob || !phone || !email) {
       return res.status(400).json({
         success: false,
         message: "Details Missing !",
@@ -181,11 +181,11 @@ const bulkDelete = async (req, res) => {
 
     const result = await Customer.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

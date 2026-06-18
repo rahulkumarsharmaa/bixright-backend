@@ -2,16 +2,57 @@ const Color = require("../../models/colourModel");
 
 const getColorData = async (req, res) => {
   try {
-    const color = await Color.find({isDeleted : false});
-    if (!color) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No color Found" });
+    // Check if pagination is requested (presence of page or limit)
+    // If not, return all data in legacy format for dropdowns/backward compatibility
+    if (!req.query.page && !req.query.limit) {
+      const color = await Color.find({ isDeleted: false }).sort({ createdAt: -1 });
+      return res.status(200).json({
+        success: true,
+        message: "color Fetched",
+        color,
+      });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "color Fetched", color });
+    let { page = 1, limit = 10, search = "", status } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const skip = (page - 1) * limit;
+
+    const filter = { isDeleted: false };
+
+    if (search) {
+      filter.title = { $regex: search, $options: "i" };
+    }
+
+    if (status) {
+      if (status === "true" || status === "active") {
+        filter.isActive = true;
+      } else if (status === "false" || status === "inactive") {
+        filter.isActive = false;
+      }
+    }
+
+    const color = await Color.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Color.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      message: color.length === 0 ? "No color Found" : "color Fetched",
+      data: {
+        data: color,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json(error.message);

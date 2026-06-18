@@ -1,18 +1,6 @@
 const SiteSettings = require("../../models/siteSettingModel");
-const cloudinary = require("../../config/cloudinaryConfig");
 
-const uploadToCloudinary = (fileBuffer) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: "siteSettings" },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-    stream.end(fileBuffer);
-  });
-};
+
 //  Add or Update Site Settings
 exports.upsertSiteSettings = async (req, res) => {
   try {
@@ -29,19 +17,20 @@ exports.upsertSiteSettings = async (req, res) => {
       footerText,
     } = req.body;
 
-    // Upload files if provided
+    // Upload files if provided (Local)
     let logoUrl = null;
     let faviconUrl = null;
+    const baseUrl = process.env.BACKEND_URL;
 
     if (req.files?.logo?.[0]) {
       const file = req.files.logo[0];
-      const result = await uploadToCloudinary(file.buffer);
-      logoUrl = result.secure_url;
+      let fileUrl = file.path.replace(/\\/g, "/");
+      logoUrl = `${baseUrl}/${fileUrl}`;
     }
     if (req.files?.favicon?.[0]) {
-      const favicon = req.files.favicon[0];
-      const result = await uploadToCloudinary(favicon.buffer);
-      faviconUrl = result.secure_url;
+      const file = req.files.favicon[0];
+      let fileUrl = file.path.replace(/\\/g, "/");
+      faviconUrl = `${baseUrl}/${fileUrl}`;
     }
 
     const existing = await SiteSettings.findOne({});

@@ -1,5 +1,5 @@
 const Color = require("../../models/colourModel");
-const cloudinary = require("../../config/cloudinaryConfig");
+
 const Product = require("../../models/productModel");
 const Size = require("../../models/sizeModel");
 const Variant = require("../../models/variantModel");
@@ -18,10 +18,10 @@ const getVariantData = async (req, res) => {
 
     const variant = await Variant.find(filter).populate("product", "title");
 
-    if (!variant) {
+    if (!variant || variant.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No Variant Found" });
+        .status(200)
+        .json({ success: true, message: "No Variant Found", variant: [] });
     }
 
     return res
@@ -165,28 +165,18 @@ const updateVariant = async (req, res) => {
     console.log("samecolor", sameColorVariant);
 
     if (file) {
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "variants" },
-          (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-          }
-        );
-
-        stream.end(file.buffer); // upload buffer
-      });
-
-      variant.image = uploadResult.secure_url;
+      const baseUrl = process.env.BACKEND_URL;
+      let fileUrl = file.path.replace(/\\/g, "/");
+      variant.image = `${baseUrl}/${fileUrl}`;
       await variant.save();
-
-      // await Variant.updateMany(
-      //   {product : variant.product ,  color : variant.color },
-      //   {
-      //     $set: { image: uploadResult.secure_url },
-      //   }
-      // );
     }
+
+    // await Variant.updateMany(
+    //   {product : variant.product ,  color : variant.color },
+    //   {
+    //     $set: { image: uploadResult.secure_url },
+    //   }
+    // );
 
     return res.status(200).json({
       success: true,

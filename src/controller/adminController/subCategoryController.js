@@ -1,22 +1,67 @@
 const Category = require("../../models/categoryModel");
 const SubCategory = require("../../models/subCategoryModel");
-const cloudinary = require("../../config/cloudinaryConfig");
+
 
 const getSubCategoryData = async (req, res) => {
   try {
-    const subCategory = await SubCategory.find({ isDeleted: false });
-    if (!subCategory) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No subCategory Found" });
+    // Check if pagination is requested (presence of page or limit)
+    // If not, return all data in legacy format for dropdowns/backward compatibility
+    if (!req.query.page && !req.query.limit) {
+      const subCategory = await SubCategory.find({ isDeleted: false }).sort({ createdAt: -1 });
+      return res.status(200).json({
+        success: true,
+        message: "SubCategory Fetched",
+        subCategory,
+      });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "SubCategory Fetched", subCategory });
+    let { page = 1, limit = 10, search = "", status } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const skip = (page - 1) * limit;
+
+    const filter = { isDeleted: false };
+
+    if (status) {
+      if (status === "true" || status === "active") {
+        filter.isActive = true;
+      } else if (status === "false" || status === "inactive") {
+        filter.isActive = false;
+      }
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const subCategory = await SubCategory.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await SubCategory.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      message: subCategory.length === 0 ? "No subCategory Found" : "SubCategory Fetched",
+      data: {
+        data: subCategory,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
   } catch (error) {
     console.log(error);
-    return res.status(500).json(error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -91,19 +136,9 @@ const addSubCategory = async (req, res) => {
     }
 
     if (file) {
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "variants" },
-          (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-          }
-        );
-
-        stream.end(file.buffer); // upload buffer
-      });
-
-      imageUrl = uploadResult.secure_url;
+      const baseUrl = process.env.BACKEND_URL;
+      let fileUrl = file.path.replace(/\\/g, "/");
+      imageUrl = `${baseUrl}/${fileUrl}`;
     }
 
     const subCategory = new SubCategory({
@@ -114,7 +149,7 @@ const addSubCategory = async (req, res) => {
         name: parentCategoryExist?.title,
       },
       description,
-      
+
     });
 
     await subCategory.save();
@@ -151,18 +186,9 @@ const updateSubCategory = async (req, res) => {
 
     // If new image uploaded
     if (file) {
-      const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "variants" },
-          (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-          }
-        );
-        stream.end(file.buffer);
-      });
-
-      imageUrl = uploadResult.secure_url;
+      const baseUrl = process.env.BACKEND_URL;
+      let fileUrl = file.path.replace(/\\/g, "/");
+      imageUrl = `${baseUrl}/${fileUrl}`;
     }
 
     // Build update object ONLY with fields that exist
@@ -285,13 +311,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "SubCategoryIds Missing" });
     }
 
-     const result = await SubCategory.updateMany(
+    const result = await SubCategory.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

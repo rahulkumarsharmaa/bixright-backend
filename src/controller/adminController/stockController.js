@@ -9,10 +9,10 @@ const getStockData = async (req, res) => {
       "title imageUrl"
     );
     console.log(stock);
-    if (!stock) {
+    if (!stock || stock.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No stock Found" });
+        .status(200)
+        .json({ success: true, message: "No stock Found", stock: [] });
     }
 
     return res

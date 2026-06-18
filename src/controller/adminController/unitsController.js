@@ -1,9 +1,9 @@
 const Unit = require("../../models/unitsModel");
 const getUnitData = async (req, res) => {
   try {
-    const unit = await Unit.find({isDeleted : false});
-    if (!unit) {
-      return res.status(404).json({ success: false, message: "No Unit Found" });
+    const unit = await Unit.find({ isDeleted: false });
+    if (!unit || unit.length === 0) {
+      return res.status(200).json({ success: true, message: "No Unit Found", unit: [] });
     }
 
     return res
@@ -141,13 +141,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "UnitIds Missing" });
     }
 
-     const result = await Unit.updateMany(
+    const result = await Unit.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

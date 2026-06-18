@@ -62,10 +62,10 @@ const getAllUsers = async (req, res) => {
   try {
     const users = await User.find();
     console.log(users);
-    if (!users) {
+    if (!users || users.length === 0) {
       return res
         .status(200)
-        .json({ success: true, message: "No Users Available" });
+        .json({ success: true, message: "No Users Available", users: [] });
     }
 
     return res
@@ -81,9 +81,9 @@ const getAllUsers = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    const userId= req.params.id;
+    const userId = req.params.id;
     const data = req.body;
-    console.log('userId' , userId)
+    console.log('userId', userId)
 
     if (!userId) {
       return res.status(400).json({
@@ -136,4 +136,4 @@ const softDeleteUser = async (req, res) => {
   }
 };
 
-module.exports = { createUser, getUserById,  getAllUsers, updateUser, softDeleteUser };
+module.exports = { createUser, getUserById, getAllUsers, updateUser, softDeleteUser };

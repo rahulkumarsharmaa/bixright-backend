@@ -105,7 +105,7 @@ const addProduct = async (req, res) => {
         continue;
       }
       console.log(brand);
-      // ✅ Find or Create Brand
+      //  Find or Create Brand
       let brandData = await Brand.findOne({ title: brand });
       console.log(brandData, "brand111111111");
       if (!brandData) {
@@ -113,13 +113,13 @@ const addProduct = async (req, res) => {
       }
       console.log(brandData, "brandaddadadad");
 
-      // ✅ Find or Create Category
+      //  Find or Create Category
       let categoryData = await Category.findOne({ title: category });
       if (!categoryData) {
         categoryData = await Category.create({ title: category });
       }
 
-      // ✅ Find or Create SubCategory
+      //  Find or Create SubCategory
       let subCategoryData = null;
       if (subCategory) {
         subCategoryData = await SubCategory.findOne({ title: subCategory });
@@ -134,7 +134,7 @@ const addProduct = async (req, res) => {
         }
       }
 
-      // ✅ Find or Create Sizes
+      //  Find or Create Sizes
       const sizeArr = Array.isArray(size) ? size : [size];
       const sizeData = [];
       for (const s of sizeArr.filter(Boolean)) {
@@ -143,7 +143,7 @@ const addProduct = async (req, res) => {
         sizeData.push({ id: foundSize._id });
       }
 
-      // ✅ Find or Create Colors
+      //  Find or Create Colors
       const colorArr = Array.isArray(color) ? color : [color];
       const colorData = [];
       for (const c of colorArr.filter(Boolean)) {
@@ -152,12 +152,12 @@ const addProduct = async (req, res) => {
         colorData.push({ id: foundColor._id });
       }
 
-      // ✅ Calculate discounted price
+      //  Calculate discounted price
       const discountedPrice = Math.round(
-        basePrice * (1 - (discount || 0) / 100)
+        basePrice * (1 - (discount || 0) / 100),
       );
 
-      // ✅ Create Product document
+      //  Create Product document
       const product = new Product({
         title,
         subTitle,
@@ -174,7 +174,7 @@ const addProduct = async (req, res) => {
         color: colorData,
       });
 
-      // ✅ Generate product variants (if function exists)
+      //  Generate product variants (if function exists)
       if (typeof generateProductVariants === "function") {
         await generateProductVariants(product);
       }
@@ -200,18 +200,16 @@ const addProduct = async (req, res) => {
 (async () => {
   try {
     console.log("Connecting to MongoDB...");
-    await mongoose.connect(
-      "mongodb+srv://shyamcamlenio_db_user:hvDnnsOMAGfA6zjj@cluster0.8baum1w.mongodb.net/ecommerceadmin"
-    );
-    console.log("✅ MongoDB Connected");
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log(" MongoDB Connected");
 
     const data = await addProduct();
     console.log(data);
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    console.error(" MongoDB connection error:", err);
   } finally {
     await mongoose.disconnect();
-    console.log("🔌 Disconnected from MongoDB");
+    console.log(" Disconnected from MongoDB");
     process.exit(0);
   }
 })();

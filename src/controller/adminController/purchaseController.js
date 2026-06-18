@@ -6,10 +6,10 @@ const Supplier = require("../../models/supplierModel");
 const getPurchaseData = async (req, res) => {
   try {
     const purchase = await Purchase.find().populate('product', 'imageUrl title').populate('supplier', 'company firstName lastName');
-    if (!purchase) {
+    if (!purchase || purchase.length === 0) {
       return res
-        .status(404)
-        .json({ success: false, message: "No Purchase Yet" });
+        .status(200)
+        .json({ success: true, message: "No Purchase Yet", purchase: [] });
     }
 
     return res
@@ -67,7 +67,7 @@ const addPurchase = async (req, res) => {
 
     console.log(req.body)
 
-    if (!product || !purchaseDate || !price || !quantity ) {
+    if (!product || !purchaseDate || !price || !quantity) {
       return res.status(400).json({
         success: false,
         message: "Details Missing !",
@@ -99,7 +99,7 @@ const addPurchase = async (req, res) => {
       });
     }
 
-     if (quantity <= 0) {
+    if (quantity <= 0) {
       return res.status(400).json({
         success: false,
         message: "Minimunm Quantity Can not be Less than 1 !",
@@ -201,13 +201,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "purchaseIds Missing" });
     }
 
-     const result = await Purchase.updateMany(
+    const result = await Purchase.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

@@ -18,17 +18,21 @@ const popupSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
-    },   
+    },
     image: {
       type: String,
       required: [true, "Image URL is required"],
-    },   
+    },
     isActive: {
       type: Boolean,
       default: true,
-    }, 
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true,versionKey: false}
+  { timestamps: true, versionKey: false }
 );
 
 module.exports = mongoose.model("Popup", popupSchema);

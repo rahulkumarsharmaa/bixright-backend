@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const cartModel = require("../../models/cartModel");
 const policyModel = require("../../models/policyModel");
 const salesReturnModel = require("../../models/salesReturnModel");
+const Customer = require("../../models/customerModel");
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -37,18 +38,49 @@ exports.placeOrder = async (req, res) => {
         .json({ success: false, message: "paymentMethod not provided" });
     }
 
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: `Customer not found: ${customerId}`,
+      });
+    }
+
     //  Fetch product details from DB to calculate accurate pricing
     const populatedProducts = [];
     for (const item of products) {
-      const dbProduct = await variantModel
-        .findById(item.variantId)
-        .populate("product", "title")
-        .lean();
+      let dbProduct;
+      let productId;
+      let variantId = item.variantId;
+
+      if (variantId) {
+        dbProduct = await variantModel
+          .findById(variantId)
+          .populate("product")
+          .lean();
+
+        if (!dbProduct) {
+          return res.status(404).json({
+            success: false,
+            message: `Variant not found: ${variantId}`,
+          });
+        }
+        productId = dbProduct.product._id;
+      } else {
+        dbProduct = await ProductModel.findById(item.productId).lean();
+        if (!dbProduct) {
+          return res.status(404).json({
+            success: false,
+            message: `Product not found: ${item.productId}`,
+          });
+        }
+        productId = dbProduct._id;
+      }
 
       const cartItem = await cartModel.findOne({
         customerId: new mongoose.Types.ObjectId(customerId),
-        productId: new mongoose.Types.ObjectId(dbProduct.product._id),
-        variantId: new mongoose.Types.ObjectId(item.variantId),
+        productId: new mongoose.Types.ObjectId(productId),
+        variantId: variantId ? new mongoose.Types.ObjectId(variantId) : null,
         isDeleted: false,
       });
       if (cartItem) {
@@ -56,32 +88,26 @@ exports.placeOrder = async (req, res) => {
         await cartItem.save();
       }
 
-      if (!dbProduct) {
-        return res.status(404).json({
+      const stockQuantity = variantId ? dbProduct.quantity : dbProduct.stock;
+      const productTitle = variantId ? dbProduct.product.title : dbProduct.title;
+
+      if (item.quantity > stockQuantity) {
+        return res.status(400).json({
           success: false,
-          message: `Product not found: ${item.productId}`,
+          message: `Product out of stock: ${productTitle}`,
         });
       }
 
-      if (item.quantity > dbProduct.quantity) {
-        return res.status(404).json({
-          success: false,
-          message: `Product out of stock: ${dbProduct.product.title}`,
-        });
-      }
-
-      const basePrice = dbProduct.price || item.price;
-
-      // You can fetch variant price from dbProduct.variants if needed
-      const price = dbProduct.discountedPrice || item.discountedPrice || 0;
+      const basePrice = (variantId ? dbProduct.price : dbProduct.basePrice) || item.price || 0;
+      const price = (variantId ? dbProduct.discountedPrice : dbProduct.discountedPrice) || item.discountedPrice || basePrice;
 
       const totalBasePrice = basePrice * item.quantity;
       const total = price * item.quantity;
 
       const discount = totalBasePrice - total;
       populatedProducts.push({
-        productId: dbProduct.product._id,
-        variantId: item.variantId,
+        productId: productId,
+        variantId: variantId || null,
         quantity: item.quantity,
         discount,
         totalBasePrice,
@@ -153,9 +179,15 @@ exports.placeOrder = async (req, res) => {
 
     //  Update inventory (decrement stock)
     for (const item of populatedProducts) {
-      await variantModel.findByIdAndUpdate(item.variantId, {
-        $inc: { quantity: -item.quantity },
-      });
+      if (item.variantId) {
+        await variantModel.findByIdAndUpdate(item.variantId, {
+          $inc: { quantity: -item.quantity },
+        });
+      } else {
+        await ProductModel.findByIdAndUpdate(item.productId, {
+          $inc: { stock: -item.quantity },
+        });
+      }
     }
 
     res.status(201).json({
@@ -260,7 +292,7 @@ exports.fetchOrders = async (req, res) => {
           as: "product.variantDetails",
         },
       },
-      { $unwind: "$product.variantDetails" },
+      { $unwind: { path: "$product.variantDetails", preserveNullAndEmptyArrays: true } },
 
       //  Re-group products back to array
       {
@@ -294,7 +326,7 @@ exports.fetchOrders = async (req, res) => {
               subTitle: "$product.productDetails.subTitle",
               size: "$product.variantDetails.size",
               color: "$product.variantDetails.color",
-              image: "$product.variantDetails.image",
+              image: { $ifNull: ["$product.variantDetails.image", { $arrayElemAt: ["$product.productDetails.images.imageUrl", 0] }] },
             },
           },
         },
@@ -401,7 +433,7 @@ exports.getOrderById = async (req, res) => {
           as: "product.variantDetails",
         },
       },
-      { $unwind: "$product.variantDetails" },
+      { $unwind: { path: "$product.variantDetails", preserveNullAndEmptyArrays: true } },
 
       //  Group back to order level
       {
@@ -499,7 +531,7 @@ exports.cancelOrder = async (req, res) => {
     // Find order
     const order = await orderModel
       .findOne({ _id: orderId })
-      
+
     console.log(order);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });

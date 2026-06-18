@@ -1,14 +1,60 @@
 const Size = require("../../models/sizeModel");
 const getSizeData = async (req, res) => {
   try {
-    const size = await Size.find({ isDeleted: false });
-    if (!size) {
-      return res.status(404).json({ success: false, message: "No size Found" });
+    // Check if pagination is requested (presence of page or limit)
+    // If not, return all data in legacy format for dropdowns/backward compatibility
+    if (!req.query.page && !req.query.limit) {
+      const size = await Size.find({ isDeleted: false }).sort({ createdAt: -1 });
+      return res.status(200).json({
+        success: true,
+        message: "Size Fetched",
+        size,
+      });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Size Fetched", size });
+    let { page = 1, limit = 10, search = "", status } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const skip = (page - 1) * limit;
+
+    const filter = { isDeleted: false };
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { code: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (status) {
+      if (status === "true" || status === "active") {
+        filter.isActive = true;
+      } else if (status === "false" || status === "inactive") {
+        filter.isActive = false;
+      }
+    }
+
+    const size = await Size.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Size.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      message: size.length === 0 ? "No size Found" : "Size Fetched",
+      data: {
+        data: size,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json(error.message);

@@ -1,19 +1,63 @@
 const Brand = require("../../models/brandModel");
 const getBrandData = async (req, res) => {
   try {
-    const brand = await Brand.find({isDeleted : false});
-    if (!brand) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No brand Found" });
+    // Check if pagination is requested (presence of page or limit)
+    // If not, return all data in legacy format for dropdowns/backward compatibility
+    if (!req.query.page && !req.query.limit) {
+      const brand = await Brand.find({ isDeleted: false }).sort({ createdAt: -1 });
+      return res.status(200).json({
+        success: true,
+        message: "Brand Fetched",
+        brand,
+      });
     }
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Brand Fetched", brand });
+    let { page = 1, limit = 10, search = "", status } = req.query;
+
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const skip = (page - 1) * limit;
+
+    const filter = { isDeleted: false };
+
+    if (status) {
+      if (status === "true" || status === "active") {
+        filter.isActive = true;
+      } else if (status === "false" || status === "inactive") {
+        filter.isActive = false;
+      }
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const brand = await Brand.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await Brand.countDocuments(filter);
+
+    return res.status(200).json({
+      success: true,
+      message: brand.length === 0 ? "No brand Found" : "Brand Fetched",
+      data: {
+        data: brand,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+    });
   } catch (error) {
     console.log(error);
-    return res.status(500).json(error.message);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -52,9 +96,9 @@ const addBrand = async (req, res) => {
 
     const lowerTitle = title.toLowerCase()
 
-    const existing = await Brand.findOne({title : lowerTitle})
-    if(existing){
-       return res.status(400).json({
+    const existing = await Brand.findOne({ title: lowerTitle })
+    if (existing) {
+      return res.status(400).json({
         success: false,
         message: "Brand Already Exist !",
       });
@@ -145,13 +189,13 @@ const bulkDelete = async (req, res) => {
         .json({ success: false, message: "BrandIds Missing" });
     }
 
-     const result = await Brand.updateMany(
+    const result = await Brand.updateMany(
       { _id: { $in: ids } },
-      { 
-        $set: { 
+      {
+        $set: {
           isDeleted: true,
           deletedAt: new Date()
-        } 
+        }
       }
     );
 

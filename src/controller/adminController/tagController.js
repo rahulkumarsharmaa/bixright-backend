@@ -1,18 +1,12 @@
 const Tag = require("../../models/tagModel");
-const cloudinary = require("../../config/cloudinaryConfig");
 
-const uploadImagesToCloudinary = async (files) => {
-  const uploadPromises = files.map((file) => {
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream({ folder: "tags" }, (error, result) => {
-          if (error) reject(error);
-          else resolve(result.secure_url);
-        })
-        .end(file.buffer);
-    });
+
+const processLocalImages = (files, req) => {
+  const baseUrl = process.env.BACKEND_URL;
+  return files.map((file) => {
+    let fileUrl = file.path.replace(/\\/g, "/");
+    return `${baseUrl}/${fileUrl}`;
   });
-  return Promise.all(uploadPromises);
 };
 
 const getTagData = async (req, res) => {
@@ -20,7 +14,7 @@ const getTagData = async (req, res) => {
     const tags = await Tag.find({ isDeleted: false });
 
     if (!tags || tags.length === 0) {
-      return res.status(404).json({ success: false, message: "No tags found" });
+      return res.status(200).json({ success: true, message: "No tags found", tags: [] });
     }
 
     return res.status(200).json({
@@ -78,7 +72,7 @@ const addTag = async (req, res) => {
 
     let imageUrls = [];
     if (req.files && req.files.length > 0) {
-      imageUrls = await uploadImagesToCloudinary(req.files);
+      imageUrls = processLocalImages(req.files, req);
     }
 
     const tag = new Tag({
@@ -114,7 +108,7 @@ const updateTag = async (req, res) => {
     //  Upload new images if provided
     let newImages = tag.images; // keep old ones
     if (req.files && req.files.length > 0) {
-      const uploaded = await uploadImagesToCloudinary(req.files);
+      const uploaded = processLocalImages(req.files, req);
       newImages = [...newImages, ...uploaded];
     }
 

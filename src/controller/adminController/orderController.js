@@ -22,8 +22,8 @@ const getOrderData = async (req, res) => {
       .populate("product.productId", "imageUrl title price")
       .populate("customer", "firstName lastName");
 
-    if (!order) {
-      return res.status(404).json({ success: false, message: "No Order Yet" });
+    if (!order || order.length === 0) {
+      return res.status(200).json({ success: true, message: "No Order Yet", order: [] });
     }
 
     return res

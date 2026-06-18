@@ -35,7 +35,7 @@ const orderSchema = new mongoose.Schema(
         variantId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Variant",
-          required: true,
+          required: false,
         },
         quantity: { type: Number, required: true, min: 1 },
         totalBasePrice: { type: Number, },
