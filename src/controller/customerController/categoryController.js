@@ -37,7 +37,7 @@ exports.getActiveCategories = async (req, res) => {
         categoryModel.countDocuments(filter),
       ]);
     }
-
+    console.log(categories, "categories")
     res.status(200).json({
       success: true,
       total,

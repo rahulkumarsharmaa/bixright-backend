@@ -23,7 +23,7 @@ require("./src/routes/app/index.js")(app);
 updateOrderStatus.start();
 
 
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.send("Home");
 });
 

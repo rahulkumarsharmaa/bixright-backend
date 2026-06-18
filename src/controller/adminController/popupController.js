@@ -45,9 +45,9 @@ exports.createPopup = async (req, res) => {
     let image = "";
 
     if (req.file) {
-      const baseUrl = process.env.BACKEND_URL;
+      // const baseUrl = process.env.BACKEND_URL;
       let fileUrl = req.file.path.replace(/\\/g, "/");
-      image = `${baseUrl}/${fileUrl}`;
+      image = `/${fileUrl}`;
     }
 
     await Popup.updateMany({ isActive: true }, { $set: { isActive: false } });
@@ -84,9 +84,9 @@ exports.updatePopup = async (req, res) => {
 
     let image = popup.image;
     if (req.file) {
-      const baseUrl = process.env.BACKEND_URL;
+      // const baseUrl = process.env.BACKEND_URL;
       let fileUrl = req.file.path.replace(/\\/g, "/");
-      image = `${baseUrl}/${fileUrl}`;
+      image = `/${fileUrl}`;
     }
     req.body.image = image;
 

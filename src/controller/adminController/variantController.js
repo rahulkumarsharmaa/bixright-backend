@@ -165,9 +165,9 @@ const updateVariant = async (req, res) => {
     console.log("samecolor", sameColorVariant);
 
     if (file) {
-      const baseUrl = process.env.BACKEND_URL;
+      // const baseUrl = process.env.BACKEND_URL;
       let fileUrl = file.path.replace(/\\/g, "/");
-      variant.image = `${baseUrl}/${fileUrl}`;
+      variant.image = `/${fileUrl}`;
       await variant.save();
     }
 

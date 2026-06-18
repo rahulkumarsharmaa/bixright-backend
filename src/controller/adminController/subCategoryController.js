@@ -136,9 +136,9 @@ const addSubCategory = async (req, res) => {
     }
 
     if (file) {
-      const baseUrl = process.env.BACKEND_URL;
+      // const baseUrl = process.env.BACKEND_URL;
       let fileUrl = file.path.replace(/\\/g, "/");
-      imageUrl = `${baseUrl}/${fileUrl}`;
+      imageUrl = `/${fileUrl}`;
     }
 
     const subCategory = new SubCategory({
@@ -186,9 +186,9 @@ const updateSubCategory = async (req, res) => {
 
     // If new image uploaded
     if (file) {
-      const baseUrl = process.env.BACKEND_URL;
+      // const baseUrl = process.env.BACKEND_URL;
       let fileUrl = file.path.replace(/\\/g, "/");
-      imageUrl = `${baseUrl}/${fileUrl}`;
+      imageUrl = `/${fileUrl}`;
     }
 
     // Build update object ONLY with fields that exist

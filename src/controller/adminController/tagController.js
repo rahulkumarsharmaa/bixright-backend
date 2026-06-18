@@ -2,10 +2,10 @@ const Tag = require("../../models/tagModel");
 
 
 const processLocalImages = (files, req) => {
-  const baseUrl = process.env.BACKEND_URL;
+  // const baseUrl = process.env.BACKEND_URL;
   return files.map((file) => {
     let fileUrl = file.path.replace(/\\/g, "/");
-    return `${baseUrl}/${fileUrl}`;
+    return `/${fileUrl}`;
   });
 };
 

@@ -3,9 +3,6 @@ const Product = require("../../models/productModel");
 const Order = require("../../models/orderModel");
 const Supplier = require("../../models/supplierModel");
 const Customer = require("../../models/customerModel");
-const {
-  default: createCloudinaryStorage,
-} = require("multer-storage-cloudinary");
 
 const getOrderData = async (req, res) => {
   try {

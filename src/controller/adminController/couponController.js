@@ -1,5 +1,4 @@
 const Coupon = require("../../models/couponModel");
-const cloudinary = require("../../config/cloudinaryConfig");
 const getCouponData = async (req, res) => {
   try {
     const coupon = await Coupon.find({ isDeleted: false });

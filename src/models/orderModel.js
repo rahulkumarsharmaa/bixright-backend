@@ -38,7 +38,7 @@ const orderSchema = new mongoose.Schema(
           required: false,
         },
         quantity: { type: Number, required: true, min: 1 },
-        totalBasePrice: { type: Number, },
+        totalBasePrice: { type: Number },
         discount: { type: Number, default: 0 },
         total: { type: Number },
       },
@@ -108,9 +108,9 @@ const orderSchema = new mongoose.Schema(
     trackingNumber: {
       type: String,
       uppercase: true,
-      unique: true,
       trim: true,
-      default: "",
+      sparse: true,
+      default: null,
     },
     // courierCompany: {
     //   type: mongoose.Schema.Types.ObjectId,
@@ -134,7 +134,7 @@ const orderSchema = new mongoose.Schema(
     transactionId: { type: String },
     remark: { type: String },
   },
-  { timestamps: true, versionKey: false }
+  { timestamps: true, versionKey: false },
 );
 
 // --- Pre-save hook to auto-generate totals and orderId ---
@@ -153,14 +153,18 @@ orderSchema.pre("save", async function (next) {
 
     this.subTotal = this.product.reduce((acc, item) => acc + item.total, 0);
     this.taxAmount = 0;
-    this.totalAmount = this.subTotal + this.taxAmount + this.shippingCharge - (this.coupounDiscount || 0);
+    this.totalAmount =
+      this.subTotal +
+      this.taxAmount +
+      this.shippingCharge -
+      (this.coupounDiscount || 0);
 
     //  Generate unique sequential orderId if new
     if (this.isNew && !this.orderId) {
       const counter = await Counter.findOneAndUpdate(
         { name: "orderId" },
         { $inc: { seq: 1 } },
-        { new: true, upsert: true }
+        { new: true, upsert: true },
       );
 
       const padded = counter.seq.toString().padStart(4, "0");

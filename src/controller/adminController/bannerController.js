@@ -89,11 +89,10 @@ const addBanner = async (req, res) => {
 
     // If image exists
     if (req.file) {
-      const baseUrl = process.env.BACKEND_URL;
       let fileUrl = req.file.path.replace(/\\/g, "/");
 
       imageData = {
-        imageUrl: `${baseUrl}/${fileUrl}`,
+        imageUrl: `/${fileUrl}`,
         imageId: req.file.path,
       };
     }

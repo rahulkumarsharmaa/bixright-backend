@@ -120,9 +120,9 @@ const addCategory = async (req, res) => {
     }
 
     if (file) {
-      const baseUrl = process.env.BACKEND_URL;
+      // const baseUrl = process.env.BACKEND_URL;
       let fileUrl = file.path.replace(/\\/g, "/");
-      imageUrl = `${baseUrl}/${fileUrl}`;
+      imageUrl = `/${fileUrl}`;
     }
 
     // 🟣 Check parent category (if provided)
@@ -184,9 +184,9 @@ const updateCategory = async (req, res) => {
 
     // If new image uploaded
     if (file) {
-      const baseUrl = process.env.BACKEND_URL;
+      // const baseUrl = process.env.BACKEND_URL;
       let fileUrl = file.path.replace(/\\/g, "/");
-      imageUrl = `${baseUrl}/${fileUrl}`;
+      imageUrl = `/${fileUrl}`;
     }
 
     // Build update object ONLY with fields that exist

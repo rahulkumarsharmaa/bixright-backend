@@ -406,7 +406,7 @@ const addProduct = async (req, res) => {
     // req.files is array of file objects from multer diskStorage
     // Each file has 'path' property like 'uploads/filename.ext'
     if (req.files && req.files.length > 0) {
-      const baseUrl = process.env.BACKEND_URL;
+      // const baseUrl = process.env.BACKEND_URL;
 
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
@@ -414,7 +414,7 @@ const addProduct = async (req, res) => {
         // Normalize windows paths
         let fileUrl = file.path.replace(/\\/g, "/");
 
-        const fullUrl = `${baseUrl}/${fileUrl}`;
+        const fullUrl = `/${fileUrl}`;
 
         productImages.push({
           imageUrl: fullUrl,
@@ -724,12 +724,12 @@ const updateProduct = async (req, res) => {
     if (req.files && req.files.length > 0) {
       console.log("files", req.files);
       const uploadedImages = [];
-      const baseUrl = process.env.BACKEND_URL;
+      // const baseUrl = process.env.BACKEND_URL;
 
       for (const file of req.files) {
         // storage logic same as addProduct
         let fileUrl = file.path.replace(/\\/g, "/");
-        const fullUrl = `${baseUrl}/${fileUrl}`;
+        const fullUrl = `/${fileUrl}`;
 
         uploadedImages.push({
           imageUrl: fullUrl,

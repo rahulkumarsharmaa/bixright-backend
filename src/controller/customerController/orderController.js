@@ -1,5 +1,6 @@
 const orderModel = require("../../models/orderModel");
 const variantModel = require("../../models/variantModel");
+const ProductModel = require("../../models/productModel");
 const transactionModel = require("../../models/transactionModel");
 const couponModel = require("../../models/couponModel");
 const mongoose = require("mongoose");

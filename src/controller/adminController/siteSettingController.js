@@ -20,17 +20,17 @@ exports.upsertSiteSettings = async (req, res) => {
     // Upload files if provided (Local)
     let logoUrl = null;
     let faviconUrl = null;
-    const baseUrl = process.env.BACKEND_URL;
+    // const baseUrl = process.env.BACKEND_URL;
 
     if (req.files?.logo?.[0]) {
       const file = req.files.logo[0];
       let fileUrl = file.path.replace(/\\/g, "/");
-      logoUrl = `${baseUrl}/${fileUrl}`;
+      logoUrl = `/${fileUrl}`;
     }
     if (req.files?.favicon?.[0]) {
       const file = req.files.favicon[0];
       let fileUrl = file.path.replace(/\\/g, "/");
-      faviconUrl = `${baseUrl}/${fileUrl}`;
+      faviconUrl = `/${fileUrl}`;
     }
 
     const existing = await SiteSettings.findOne({});
