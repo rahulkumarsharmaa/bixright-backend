@@ -1,4 +1,4 @@
-const apiPrefix = "/customer-api";
+const apiPrefix = "/api/customer-api";
 module.exports = (app) => {
   app.use(`${apiPrefix}/category`, require("./categoryRoute"));
   app.use(`${apiPrefix}/product`, require("./productRoute"));
