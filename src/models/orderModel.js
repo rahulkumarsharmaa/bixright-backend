@@ -37,6 +37,7 @@ const orderSchema = new mongoose.Schema(
           ref: "Variant",
           required: false,
         },
+        // price: { type: Number },
         quantity: { type: Number, required: true, min: 1 },
         totalBasePrice: { type: Number },
         discount: { type: Number, default: 0 },
