@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv").config();
+const path = require("path");
 const cors = require("cors");
 const dbConnection = require("./src/config/dbConfig");
 const authRoute = require("./src/routes/authRoute");
@@ -13,6 +14,7 @@ dbConnection();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/uploads", express.static("uploads"));
 
 app.use("/api/auth", authRoute);
@@ -21,7 +23,6 @@ require("./src/routes/customer/index.js")(app);
 require("./src/routes/app/index.js")(app);
 
 updateOrderStatus.start();
-
 
 app.get("/api", (req, res) => {
   res.send("Home");

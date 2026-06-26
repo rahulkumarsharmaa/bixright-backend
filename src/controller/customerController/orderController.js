@@ -8,6 +8,16 @@ const cartModel = require("../../models/cartModel");
 const policyModel = require("../../models/policyModel");
 const salesReturnModel = require("../../models/salesReturnModel");
 const Customer = require("../../models/customerModel");
+const newOrderEmail = require("../../templates/newOrder");
+const orderCancelEmail = require("../../templates/orderCancelled");
+const { sendEmail } = require("../../utils/email");
+
+const generateOrderNumber = () => {
+  const timestamp = Date.now(); // 1750673456789
+  const random = Math.floor(1000 + Math.random() * 9000);
+
+  return `#ORD-${timestamp}-${random}`;
+};
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -19,6 +29,8 @@ exports.placeOrder = async (req, res) => {
       couponCode,
       coupounDiscount,
     } = req.body;
+
+    console.log(req.body, "Body");
     const customerId = req.user?.id;
 
     if (!products || products.length === 0) {
@@ -90,7 +102,9 @@ exports.placeOrder = async (req, res) => {
       }
 
       const stockQuantity = variantId ? dbProduct.quantity : dbProduct.stock;
-      const productTitle = variantId ? dbProduct.product.title : dbProduct.title;
+      const productTitle = variantId
+        ? dbProduct.product.title
+        : dbProduct.title;
 
       if (item.quantity > stockQuantity) {
         return res.status(400).json({
@@ -99,14 +113,19 @@ exports.placeOrder = async (req, res) => {
         });
       }
 
-      const basePrice = (variantId ? dbProduct.price : dbProduct.basePrice) || item.price || 0;
-      const price = (variantId ? dbProduct.discountedPrice : dbProduct.discountedPrice) || item.discountedPrice || basePrice;
+      const basePrice =
+        (variantId ? dbProduct.price : dbProduct.basePrice) || item.price || 0;
+      const price =
+        (variantId ? dbProduct.discountedPrice : dbProduct.discountedPrice) ||
+        item.discountedPrice ||
+        basePrice;
 
       const totalBasePrice = basePrice * item.quantity;
       const total = price * item.quantity;
 
       const discount = totalBasePrice - total;
       populatedProducts.push({
+        productName: dbProduct?.title,
         productId: productId,
         variantId: variantId || null,
         quantity: item.quantity,
@@ -138,10 +157,13 @@ exports.placeOrder = async (req, res) => {
     const today = new Date();
     const expectedDeliveryDate = new Date(today);
     expectedDeliveryDate.setDate(
-      today.getDate() + (policy?.deliveryWithinDays || 7)
+      today.getDate() + (policy?.deliveryWithinDays || 7),
     );
+
+    const orderId = generateOrderNumber();
     //  Create order
     const order = await orderModel.create({
+      orderId: orderId,
       customer: customerId,
       product: populatedProducts,
       billingAddress,
@@ -150,7 +172,7 @@ exports.placeOrder = async (req, res) => {
       orderStatus: "confirmed",
       subTotal,
       taxAmount,
-      shippingCharge,
+      shippingCharge: shippingCharge,
       totalAmount,
       expectedDeliveryDate,
       coupounDiscount,
@@ -191,6 +213,49 @@ exports.placeOrder = async (req, res) => {
       }
     }
 
+    const fullShippingAddress = [
+      shippingAddress?.addressLine1,
+      shippingAddress?.addressLine2,
+      shippingAddress?.city,
+      shippingAddress?.state,
+      shippingAddress?.country,
+      shippingAddress?.postalCode,
+    ]
+      .filter(Boolean) // Removes undefined, null, "", false
+      .join(", ");
+
+    const html = newOrderEmail({
+      logoUrl: "http://192.168.1.34:5000/logo.png",
+      companyName: "Bixright Software",
+
+      orderNumber: orderId,
+
+      orderDate: new Date().toLocaleDateString(),
+      orderTime: new Date().toLocaleTimeString(),
+
+      customerName: customer?.firstName,
+      customerEmail: customer?.email,
+      customerPhone: customer?.phone,
+
+      totalItems: products,
+      subtotal: subTotal,
+      shippingCharge: shippingCharge,
+
+      tax: taxAmount,
+      totalAmount: totalAmount,
+
+      orderStatus: "confirmed",
+
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentMethod === "cod" ? "pending" : "paid",
+
+      shippingAddress: fullShippingAddress,
+      orderItems: populatedProducts,
+    });
+
+    const email = "shyam@camlenio.com";
+    sendEmail(email, [], [], `🛒 New Order Received `, html);
+
     res.status(201).json({
       success: true,
       message: "Order placed successfully",
@@ -218,7 +283,7 @@ exports.getAvailableCoupons = async (req, res) => {
         endDate: { $gte: currentDate },
       })
       .select(
-        "couponCode discountType discountValue description startDate endDate minOrderAmount maxDiscountAmount usageLimit usageNumberPerUser"
+        "couponCode discountType discountValue description startDate endDate minOrderAmount maxDiscountAmount usageLimit usageNumberPerUser",
       )
       .sort({ createdAt: -1 });
 
@@ -293,7 +358,12 @@ exports.fetchOrders = async (req, res) => {
           as: "product.variantDetails",
         },
       },
-      { $unwind: { path: "$product.variantDetails", preserveNullAndEmptyArrays: true } },
+      {
+        $unwind: {
+          path: "$product.variantDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
 
       //  Re-group products back to array
       {
@@ -327,7 +397,17 @@ exports.fetchOrders = async (req, res) => {
               subTitle: "$product.productDetails.subTitle",
               size: "$product.variantDetails.size",
               color: "$product.variantDetails.color",
-              image: { $ifNull: ["$product.variantDetails.image", { $arrayElemAt: ["$product.productDetails.images.imageUrl", 0] }] },
+              image: {
+                $ifNull: [
+                  "$product.variantDetails.image",
+                  {
+                    $arrayElemAt: [
+                      "$product.productDetails.images.imageUrl",
+                      0,
+                    ],
+                  },
+                ],
+              },
             },
           },
         },
@@ -434,7 +514,12 @@ exports.getOrderById = async (req, res) => {
           as: "product.variantDetails",
         },
       },
-      { $unwind: { path: "$product.variantDetails", preserveNullAndEmptyArrays: true } },
+      {
+        $unwind: {
+          path: "$product.variantDetails",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
 
       //  Group back to order level
       {
@@ -522,6 +607,8 @@ exports.cancelOrder = async (req, res) => {
     const customerId = req.user.id;
     const { orderId, remark } = req.body;
 
+    console.log("Order ID", req.body);
+
     // Validation
     if (!orderId || !customerId) {
       return res.status(400).json({
@@ -530,8 +617,7 @@ exports.cancelOrder = async (req, res) => {
     }
 
     // Find order
-    const order = await orderModel
-      .findOne({ _id: orderId })
+    const order = await orderModel.findOne({ _id: orderId });
 
     console.log(order);
     if (!order) {
@@ -551,11 +637,32 @@ exports.cancelOrder = async (req, res) => {
       });
     }
 
+    const customer = await Customer.findById(order?.customer);
+
     //  Cancel the order
     order.orderStatus = "cancelled";
     order.remark = remark || "Cancelled by customer";
 
     await order.save();
+
+    const html = orderCancelEmail({
+      logoUrl: "http://192.168.1.34:5000/logo.png",
+      companyName: "Bixright Software",
+      orderId: order?.orderId,
+
+      customerName: customer?.firstName,
+      customerEmail: customer?.email,
+      customerPhone: customer?.phone,
+
+      totalAmount: order?.totalAmount,
+      cancelledDate: new Date().toLocaleDateString(),
+      cancelledTime: new Date().toLocaleTimeString(),
+
+      remark: remark,
+    });
+
+    const email = "shyam@camlenio.com";
+    sendEmail(email, [], [], `❌ Order Cancelled `, html);
 
     return res.status(200).json({
       message: "Order cancelled successfully!",
@@ -675,7 +782,7 @@ exports.createSalesReturn = async (req, res) => {
 
       //  Check if variant was part of the order
       const orderedVariant = validOrder.product.find(
-        (i) => i.variantId.toString() === variantId.toString()
+        (i) => i.variantId.toString() === variantId.toString(),
       );
       if (!orderedVariant) {
         return res.status(400).json({

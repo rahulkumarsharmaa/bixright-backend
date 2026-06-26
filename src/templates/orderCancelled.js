@@ -1,0 +1,125 @@
+// orderCancelledAdminTemplate.js
+module.exports = (data) => {
+  const {
+    logoUrl,
+    companyName,
+    orderId,
+    customerName,
+    customerEmail,
+    customerPhone,
+    totalAmount,
+    cancelledDate,
+    cancelledTime,
+    remark,
+  } = data;
+
+  const currentYear = new Date().getFullYear();
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Cancelled</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f9fc;padding:48px 0;">
+<tr>
+<td align="center">
+
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 4px 24px rgba(0,0,0,0.06);border-collapse:separate;">
+
+<tr>
+<td align="center" style="background:#991b1b;padding:40px 40px 35px;">
+<img src="${logoUrl}" width="64" height="64" alt="Company Logo" style="display:block;border-radius:12px;object-fit:contain;">
+<h1 style="margin:20px 0 8px;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.02em;">
+  ❌ Order Cancelled
+</h1>
+<p style="margin:0;color:#fecaca;font-size:15px;line-height:22px;">
+  A customer has cancelled an order on your ecommerce platform.
+</p>
+</td>
+</tr>
+
+<tr>
+<td style="padding:32px 40px 16px;">
+<div style="background:#fef2f2;border-left:4px solid #dc2626;padding:18px;border-radius:10px;">
+<div style="font-size:16px;font-weight:700;color:#b91c1c;margin-bottom:6px;">
+  Cancellation Notification
+</div>
+<p style="margin:0;color:#7f1d1d;font-size:14px;line-height:24px;">
+  The following order has been cancelled by the customer. Please review the information below and take any required actions regarding inventory or processing.
+</p>
+</div>
+</td>
+</tr>
+
+<tr>
+<td style="padding:16px 40px 40px;">
+<h2 style="margin:0 0 16px;color:#111827;font-size:16px;font-weight:700;letter-spacing:-0.01em;">
+  Cancelled Order Details
+</h2>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;border-collapse:separate;">
+<tr>
+<td style="background:#fafafa;padding:14px 18px;font-size:14px;color:#4b5563;font-weight:600;width:160px;border-bottom:1px solid #e5e7eb;">Order ID</td>
+<td style="padding:14px 18px;font-size:14px;color:#111827;font-family:monospace;font-weight:700;border-bottom:1px solid #e5e7eb;">${orderId}</td>
+</tr>
+<tr>
+<td style="background:#fafafa;padding:14px 18px;font-size:14px;color:#4b5563;font-weight:600;border-bottom:1px solid #e5e7eb;">Customer Name</td>
+<td style="padding:14px 18px;font-size:14px;color:#111827;font-weight:500;border-bottom:1px solid #e5e7eb;">${customerName}</td>
+</tr>
+<tr>
+<td style="background:#fafafa;padding:14px 18px;font-size:14px;color:#4b5563;font-weight:600;border-bottom:1px solid #e5e7eb;">Email Address</td>
+<td style="padding:14px 18px;font-size:14px;color:#2563eb;font-weight:500;border-bottom:1px solid #e5e7eb;word-break:break-all;">${customerEmail}</td>
+</tr>
+<tr>
+<td style="background:#fafafa;padding:14px 18px;font-size:14px;color:#4b5563;font-weight:600;border-bottom:1px solid #e5e7eb;">Phone Number</td>
+<td style="padding:14px 18px;font-size:14px;color:#111827;font-weight:500;border-bottom:1px solid #e5e7eb;">${customerPhone}</td>
+</tr>
+<tr>
+<td style="background:#fafafa;padding:14px 18px;font-size:14px;color:#4b5563;font-weight:600;border-bottom:1px solid #e5e7eb;">Order Amount</td>
+<td style="padding:14px 18px;font-size:15px;font-weight:700;color:#111827;border-bottom:1px solid #e5e7eb;">₹${totalAmount}</td>
+</tr>
+<tr>
+<td style="background:#fafafa;padding:14px 18px;font-size:14px;color:#4b5563;font-weight:600;border-bottom:1px solid #e5e7eb;">Cancelled On</td>
+<td style="padding:14px 18px;font-size:14px;color:#111827;border-bottom:1px solid #e5e7eb;">${cancelledDate} &bull; ${cancelledTime}</td>
+</tr>
+<tr>
+<td style="background:#fafafa;padding:14px 18px;font-size:14px;color:#4b5563;font-weight:600;border-bottom:1px solid #e5e7eb;">Reason</td>
+<td style="padding:14px 18px;font-size:14px;color:#4b5563;line-height:20px;border-bottom:1px solid #e5e7eb;">${remark || "Cancelled by customer"}</td>
+</tr>
+<tr>
+<td style="background:#fafafa;padding:14px 18px;font-size:14px;color:#4b5563;font-weight:600;">Status</td>
+<td style="padding:14px 18px;">
+<span style="display:inline-block;padding:4px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;color:#b91c1c;font-size:12px;font-weight:700;letter-spacing:0.03em;">CANCELLED</span>
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+
+<tr>
+<td style="background:#f8fafc;padding:32px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+<p style="margin:0;color:#64748b;font-size:13px;line-height:20px;">
+  This is an automated cancellation notification generated by your eCommerce platform dashboard backend.
+</p>
+<p style="margin:10px 0 0;color:#94a3b8;font-size:12px;">
+  &copy; ${currentYear} ${companyName}. All Rights Reserved.
+</p>
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+  `;
+};

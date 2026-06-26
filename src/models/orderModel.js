@@ -159,18 +159,6 @@ orderSchema.pre("save", async function (next) {
       this.shippingCharge -
       (this.coupounDiscount || 0);
 
-    //  Generate unique sequential orderId if new
-    if (this.isNew && !this.orderId) {
-      const counter = await Counter.findOneAndUpdate(
-        { name: "orderId" },
-        { $inc: { seq: 1 } },
-        { new: true, upsert: true },
-      );
-
-      const padded = counter.seq.toString().padStart(4, "0");
-      this.orderId = `#ORD-${padded}`;
-    }
-
     next();
   } catch (err) {
     next(err);

@@ -2,12 +2,14 @@ const Customer = require("../../models/customerModel");
 const bcrypt = require("../../utils/bcrypt");
 // const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const generateWelcomeEmail = require("../../templates/userRegister");
+const { sendEmail } = require("../../utils/email");
 
 // Helper to generate JWT token
 const generateToken = (customer) => {
   return jwt.sign(
     { id: customer._id, email: customer.email, phone: customer.phone },
-    process.env.JWT_SECRET
+    process.env.JWT_SECRET,
   );
 };
 
@@ -36,7 +38,7 @@ exports.customerSignup = async (req, res) => {
     }
 
     // validate email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({
         success: false,
@@ -45,7 +47,7 @@ exports.customerSignup = async (req, res) => {
     }
 
     //  Validate phone format ( 10-digit validation)
-    const phoneRegex = /^[6-9]\d{9}$/; 
+    const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneRegex.test(phone)) {
       return res.status(400).json({
         success: false,
@@ -63,9 +65,22 @@ exports.customerSignup = async (req, res) => {
       phone,
       email,
       password: hashedPassword,
+      companyName: "Bixright Software",
     });
 
     const token = generateToken(customer);
+
+    const html = generateWelcomeEmail({
+      logoUrl: "http://192.168.1.34:5000/logo.png",
+      customerName: name,
+      customerEmail: email,
+      phone: phone,
+      registrationDate: new Date(),
+      registrationTime: new Date().toLocaleTimeString(),
+      customerId: customer._id,
+    });
+
+    sendEmail(email, [], [], `Welcome to ${"Bixright Software"}`, html);
 
     res.status(201).json({
       success: true,
@@ -110,7 +125,7 @@ exports.customerLogin = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
-      if (customer.isActive === false) {
+    if (customer.isActive === false) {
       return res
         .status(401)
         .json({ success: false, message: "Customer is Inactive" });
@@ -157,10 +172,12 @@ exports.getCustomerProfile = async (req, res) => {
   try {
     const customerId = req.user.id;
 
-    const customer = await Customer.findById(customerId)
+    const customer = await Customer.findById(customerId);
 
     if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
     }
 
     return res.status(200).json({
@@ -183,18 +200,19 @@ exports.updateCustomerProfile = async (req, res) => {
     const customerId = req.user.id;
     const updates = req.body;
 
-    
     const disallowed = ["_id", "phone", "email", "password", "isDeleted"];
     disallowed.forEach((field) => delete updates[field]);
 
     const updatedCustomer = await Customer.findByIdAndUpdate(
       customerId,
       { $set: updates },
-      { new: true, runValidators: true }
-    )
+      { new: true, runValidators: true },
+    );
 
     if (!updatedCustomer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
     }
 
     return res.status(200).json({

@@ -1,6 +1,7 @@
 const User = require("../models/userModel");
 const { hashPassword, comparePassword } = require("../utils/bcrypt");
 const { generateToken } = require("../utils/jwt");
+const generateWelcomeEmail = require("../templates/userRegister");
 const axios = require("axios");
 
 const register = async (req, res) => {
@@ -33,6 +34,7 @@ const register = async (req, res) => {
     });
 
     await admin.save();
+
     return res.status(200).json({
       success: true,
       message: "User Registered Successfully ! Please Login",
@@ -76,7 +78,7 @@ const login = async (req, res) => {
         .json({ success: false, message: "Invalid Credentials !" });
     }
 
-    console.log('existingUser' , existingUser)
+    console.log("existingUser", existingUser);
 
     if (existingUser?.role !== "admin") {
       return res.status(403).json({ success: false, message: "Forbidden !" });
