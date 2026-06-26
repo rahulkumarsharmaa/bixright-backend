@@ -224,8 +224,10 @@ exports.placeOrder = async (req, res) => {
       .filter(Boolean) // Removes undefined, null, "", false
       .join(", ");
 
+    const baseUrl = process.env.BASE_URL;
+
     const html = newOrderEmail({
-      logoUrl: "http://192.168.1.34:5000/logo.png",
+      logoUrl: `${baseUrl}/logo.png`,
       companyName: "Bixright Software",
 
       orderNumber: orderId,
@@ -253,7 +255,7 @@ exports.placeOrder = async (req, res) => {
       orderItems: populatedProducts,
     });
 
-    const email = "shyam@camlenio.com";
+    const email = process.env.SMTP_USER;
     sendEmail(email, [], [], `🛒 New Order Received `, html);
 
     res.status(201).json({
@@ -645,8 +647,10 @@ exports.cancelOrder = async (req, res) => {
 
     await order.save();
 
+    const baseUrl = process.env.BASE_URL;
+
     const html = orderCancelEmail({
-      logoUrl: "http://192.168.1.34:5000/logo.png",
+      logoUrl: `${baseUrl}/logo.png`,
       companyName: "Bixright Software",
       orderId: order?.orderId,
 
@@ -661,7 +665,7 @@ exports.cancelOrder = async (req, res) => {
       remark: remark,
     });
 
-    const email = "shyam@camlenio.com";
+    const email = process.env.SMTP_USER;
     sendEmail(email, [], [], `❌ Order Cancelled `, html);
 
     return res.status(200).json({

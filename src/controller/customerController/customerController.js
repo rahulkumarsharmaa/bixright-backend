@@ -69,9 +69,10 @@ exports.customerSignup = async (req, res) => {
     });
 
     const token = generateToken(customer);
+    const baseUrl = process.env.BASE_URL;
 
     const html = generateWelcomeEmail({
-      logoUrl: "http://192.168.1.34:5000/logo.png",
+      logoUrl: `${baseUrl}/logo.png`,
       customerName: name,
       customerEmail: email,
       phone: phone,
@@ -80,7 +81,14 @@ exports.customerSignup = async (req, res) => {
       customerId: customer._id,
     });
 
-    sendEmail(email, [], [], `Welcome to ${"Bixright Software"}`, html);
+    // sendEmail(email, [], [], `Welcome to ${"Bixright Software"}`, html);
+    sendEmail(
+      process.env.SMTP_USER,
+      [],
+      [],
+      `Welcome to ${"Bixright Software"}`,
+      html,
+    );
 
     res.status(201).json({
       success: true,
