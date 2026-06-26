@@ -45,7 +45,7 @@ const getOrderById = async (req, res) => {
 
   try {
     const order = await Order.findById(id)
-      .populate("product.productId", "images title price")
+      // .populate("product.productId", "images title price basePrice discountedPrice")
       .populate("product.variantId", "color size sku price image")
       .populate("customer", "firstName lastName email  address.city phone ");
     if (!order) {
@@ -88,6 +88,7 @@ const addOrder = async (req, res) => {
 
     const products = product.map((p, index) => ({
       productId: p.productId,
+      variantId: p.variantId,
       price: p.price,
       quantity: p.quantity,
       discount: p.discount,

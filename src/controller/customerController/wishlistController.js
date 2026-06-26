@@ -99,6 +99,8 @@ exports.getWishlist = async (req, res) => {
           branndName: "$productData.brand.name",
           subTitle: "$productData.subTitle",
           basePrice: "$productData.basePrice",
+          discountedPrice: "$productData.discountedPrice",
+          discount: "$productData.discount",
           image: { $arrayElemAt: ["$productData.images.imageUrl", 0] },
           categoryName:"$productData.category.name",
           subCategoryName:"$productData.subCategory.name",
