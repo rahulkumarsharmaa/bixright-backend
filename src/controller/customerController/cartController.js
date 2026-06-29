@@ -131,8 +131,8 @@ exports.getCartByCustomer = async (req, res) => {
 
     if (!cartItems || cartItems.length === 0) {
       return res
-        .status(404)
-        .json({ message: "No items found in cart", data: [], success: false });
+        .status(200)
+        .json({ message: "No items found in cart", data: [], success: true });
     }
 
     totalAmount = cartItems.reduce(
